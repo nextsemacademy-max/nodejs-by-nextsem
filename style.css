@@ -1,3 +1,5 @@
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;1,300;1,400;1,500;1,600;1,700;1,800&family=Geist+Mono:wght@300;400;500;600;700;800&display=swap');
+
 /* ===========================
    NextSem – style.css
    =========================== */
@@ -20,8 +22,9 @@
   --text-primary: #f0f6f0;
   --text-secondary: #8b9eb5;
   --text-muted: #4a5568;
-  --font-sans: 'Inter', sans-serif;
-  --font-mono: 'JetBrains Mono', monospace;
+  --font-sans: 'Plus Jakarta Sans', 'Inter', sans-serif;
+  --font-heading: 'Plus Jakarta Sans', sans-serif;
+  --font-mono: 'Geist Mono', 'JetBrains Mono', monospace;
   --radius-sm: 8px;
   --radius-md: 14px;
   --radius-lg: 22px;

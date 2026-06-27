@@ -833,6 +833,23 @@ trackFilters.forEach(btn => {
     updateProgressBanner();
   }
 
+  function adjustTextareas() {
+    const textareas = document.querySelectorAll('.sc-code-textarea');
+    textareas.forEach(textarea => {
+      textarea.style.height = 'auto';
+      textarea.style.height = (textarea.scrollHeight + 4) + 'px';
+      
+      if (!textarea.dataset.resizeBound) {
+        textarea.dataset.resizeBound = 'true';
+        textarea.addEventListener('input', function() {
+          this.style.height = 'auto';
+          this.style.height = (this.scrollHeight + 4) + 'px';
+        });
+      }
+    });
+  }
+  window.addEventListener('resize', adjustTextareas);
+
   function renderSlides() {
     if (_swipeItems.length === 0) {
       if (slideCenter) slideCenter.innerHTML = '<div style="height:100%;display:flex;align-items:center;justify-content:center;color:var(--text-muted);font-size:0.85rem;">No lessons in this track.</div>';
@@ -848,6 +865,9 @@ trackFilters.forEach(btn => {
     if (slideCenter) slideCenter.scrollTop = 0;
     if (slideLeft) slideLeft.scrollTop = 0;
     if (slideRight) slideRight.scrollTop = 0;
+
+    adjustTextareas();
+    setTimeout(adjustTextareas, 0);
   }
 
   function buildSwipeCardHtml(item, pos) {
@@ -873,8 +893,6 @@ trackFilters.forEach(btn => {
 
     // Code preview snippet
     const rawSnippet = lessonCodeSnippets[lesson.id] || '';
-    const snippetLines = rawSnippet.split('\n').length;
-    const textareaHeight = Math.max(80, snippetLines * 18 + 24);
 
     return `
       <div class="card">
@@ -890,7 +908,7 @@ trackFilters.forEach(btn => {
         
         <div class="sc-code-block" style="margin-top: 4px;">
           <div class="sc-code-label">EDITABLE CODE</div>
-          <textarea class="sc-code-textarea" id="code-textarea-${pos}" style="background: #0d1117; color: #e6edf3; border: none; padding: 12px; font-family: var(--font-mono); font-size: 0.8rem; line-height: 1.5; resize: none; height: ${textareaHeight}px; width: 100%; outline: none; box-sizing: border-box; display: block;" spellcheck="false">${rawSnippet}</textarea>
+          <textarea class="sc-code-textarea" id="code-textarea-${pos}" style="background: #0d1117; color: #e6edf3; border: none; padding: 12px; font-family: var(--font-mono); font-size: 0.8rem; line-height: 1.5; resize: none; width: 100%; outline: none; box-sizing: border-box; display: block;" spellcheck="false">${rawSnippet}</textarea>
         </div>
 
         <div style="display: flex; gap: 8px; margin-top: 4px; flex-wrap: wrap;">
@@ -1400,8 +1418,18 @@ trackFilters.forEach(btn => {
     // Auto-size textarea and bind code runner event listeners
     const detailTextarea = document.getElementById('detail-code-textarea');
     if (detailTextarea) {
-      const lineCount = detailTextarea.value.split('\n').length;
-      detailTextarea.style.height = `${Math.max(80, lineCount * 18 + 24)}px`;
+      const resizeDetailTextarea = () => {
+        detailTextarea.style.height = 'auto';
+        detailTextarea.style.height = (detailTextarea.scrollHeight + 4) + 'px';
+      };
+      resizeDetailTextarea();
+      setTimeout(resizeDetailTextarea, 0);
+      setTimeout(resizeDetailTextarea, 100);
+
+      if (!detailTextarea.dataset.resizeBound) {
+        detailTextarea.dataset.resizeBound = 'true';
+        detailTextarea.addEventListener('input', resizeDetailTextarea);
+      }
     }
 
     const detailRunBtn = document.getElementById('detail-run-btn');
