@@ -4,6 +4,29 @@
 
 const lessons = window.lessons || [];
 
+const lessonCodeSnippets = {
+  'hello-world':    `console.log("Hello, World!");\nconsole.log(process.version);`,
+  'modules':        `const fs = require('fs');\nmodule.exports = { greet };`,
+  'fs':             `fs.readFile('data.txt', (err, data)\n  => console.log(data));`,
+  'async':          `async function main() {\n  await delay(1000);\n  console.log('done');\n}`,
+  'http':           `http.createServer((req, res) => {\n  res.end('Hello!');\n}).listen(3000);`,
+  'express':        `app.get('/api', (req, res) => {\n  res.json({ ok: true });\n});`,
+  'events':         `emitter.on('data', (msg) => {\n  console.log(msg);\n});`,
+  'streams':        `readable.pipe(writable);\nstream.on('end', done);`,
+  'database':       `await db.collection('users')\n  .find({ active: true });`,
+  'jwt':            `jwt.sign({ id: user._id },\n  SECRET, { expiresIn:'7d'});`,
+  'os-process':     `process.on('exit', (code) => {\n  console.log('bye', code);\n});`,
+  'error-handling': `try {\n  await riskyOp();\n} catch(err) {\n  next(err);\n}`,
+  'websockets':     `io.on('connection', (socket) => {\n  socket.emit('hi', 'world');\n});`,
+  'testing':        `describe('API', () => {\n  it('returns 200', async () =>\n    expect(res.status).toBe(200));`,
+  'cors-helmet':    `app.use(helmet());\napp.use(cors({ origin: '*' }));`,
+  'env-config':     `require('dotenv').config();\nconst PORT = process.env.PORT || 3000;`,
+  'file-upload':    `upload.single('photo'),\n(req, res) => res.json({ path: req.file.path });`,
+  'redis':          `const cached = await redis.get(key);\nif (cached) return res.json(JSON.parse(cached));`,
+  'clustering':     `if (cluster.isPrimary) cluster.fork();\nelse http.createServer(handler).listen(3000);`,
+  'graphql':        `const schema = buildSchema(\`type Query { hello: String }\`);\nconst root = { hello: () => 'Hello World!' };`,
+};
+
 function getErrorHint(errorText, code, lessonId) {
   const err = String(errorText || '').toLowerCase();
   
@@ -54,6 +77,43 @@ function getErrorHint(errorText, code, lessonId) {
   }
 
   return `💡 <strong>Hint:</strong> Check your variable declarations, correct spelling of keywords, and verify all brackets and parentheses match.`;
+}
+
+window.toggleCorrectCode = function(btn, isDetail, identifier) {
+  const container = btn.nextElementSibling;
+  if (!container) return;
+  
+  if (container.style.display === 'none') {
+    let codeText = '';
+    if (isDetail) {
+      const lesson = lessons.find(l => l.id === identifier);
+      if (lesson && lesson.code) {
+        codeText = lesson.code.replace(/<[^>]+>/g, '').trim();
+      }
+    } else {
+      codeText = lessonCodeSnippets[identifier] || '';
+    }
+    
+    container.textContent = codeText;
+    container.style.display = 'block';
+    btn.textContent = 'Hide Correct Code';
+  } else {
+    container.style.display = 'none';
+    container.textContent = '';
+    btn.textContent = 'Show Correct Code';
+  }
+};
+
+function buildErrorHintHtml(errorMsg, lessonId, isDetail) {
+  const hintText = getErrorHint(errorMsg, '', lessonId);
+  return `
+    <div>${hintText}</div>
+    <button class="show-correct-code-btn" onclick="toggleCorrectCode(this, ${isDetail}, '${lessonId}')" style="margin-top: 8px; background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255, 255, 255, 0.1); color: #fbbf24; padding: 6px 12px; border-radius: 6px; font-size: 0.72rem; font-weight: 700; cursor: pointer; transition: all 0.2s; display: inline-flex; align-items: center; gap: 4px;">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="12" height="12" style="display:inline-block;"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>
+      <span>Show Correct Code</span>
+    </button>
+    <pre class="correct-code-snippet" style="display: none; margin-top: 8px; padding: 10px; background: #070a0e; border: 1px solid rgba(255,255,255,0.06); border-radius: 6px; font-family: var(--font-mono); font-size: 0.76rem; color: #34d399; overflow-x: auto; white-space: pre-wrap; word-wrap: break-word; text-align: left;"></pre>
+  `;
 }
 
 /* ── Navbar scroll effect ── */
@@ -807,29 +867,6 @@ trackFilters.forEach(btn => {
     renderQuestion();
   }
 
-  /* ─── Swipe Feed Data ─── */
-  const lessonCodeSnippets = {
-    'hello-world':    `console.log("Hello, World!");\nconsole.log(process.version);`,
-    'modules':        `const fs = require('fs');\nmodule.exports = { greet };`,
-    'fs':             `fs.readFile('data.txt', (err, data)\n  => console.log(data));`,
-    'async':          `async function main() {\n  await delay(1000);\n  console.log('done');\n}`,
-    'http':           `http.createServer((req, res) => {\n  res.end('Hello!');\n}).listen(3000);`,
-    'express':        `app.get('/api', (req, res) => {\n  res.json({ ok: true });\n});`,
-    'events':         `emitter.on('data', (msg) => {\n  console.log(msg);\n});`,
-    'streams':        `readable.pipe(writable);\nstream.on('end', done);`,
-    'database':       `await db.collection('users')\n  .find({ active: true });`,
-    'jwt':            `jwt.sign({ id: user._id },\n  SECRET, { expiresIn:'7d'});`,
-    'os-process':     `process.on('exit', (code) => {\n  console.log('bye', code);\n});`,
-    'error-handling': `try {\n  await riskyOp();\n} catch(err) {\n  next(err);\n}`,
-    'websockets':     `io.on('connection', (socket) => {\n  socket.emit('hi', 'world');\n});`,
-    'testing':        `describe('API', () => {\n  it('returns 200', async () =>\n    expect(res.status).toBe(200));`,
-    'cors-helmet':    `app.use(helmet());\napp.use(cors({ origin: '*' }));`,
-    'env-config':     `require('dotenv').config();\nconst PORT = process.env.PORT || 3000;`,
-    'file-upload':    `upload.single('photo'),\n(req, res) => res.json({ path: req.file.path });`,
-    'redis':          `const cached = await redis.get(key);\nif (cached) return res.json(JSON.parse(cached));`,
-    'clustering':     `if (cluster.isPrimary) cluster.fork();\nelse http.createServer(handler).listen(3000);`,
-    'graphql':        `const schema = buildSchema(\`type Query { hello: String }\`);\nconst root = { hello: () => 'Hello World!' };`,
-  };
   const trackLabels = { 'core':'🌱 Core', 'web':'🚂 Express', 'db-auth':'🗄️ DB & Auth', 'devops-test':'🧪 Testing' };
 
   let _activeFilter = 'all';
@@ -1174,7 +1211,7 @@ trackFilters.forEach(btn => {
     const hasError = logs.some(l => l.type === 'error');
     if (hasError && hintBox) {
       const firstError = logs.find(l => l.type === 'error');
-      hintBox.innerHTML = getErrorHint(firstError ? firstError.text : 'Unknown error', code, lessonId);
+      hintBox.innerHTML = buildErrorHintHtml(firstError ? firstError.text : 'Unknown error', lessonId, false);
       hintBox.style.display = 'block';
     }
 
@@ -1294,7 +1331,7 @@ trackFilters.forEach(btn => {
     const hasError = logs.some(l => l.type === 'error');
     if (hasError && hintBox) {
       const firstError = logs.find(l => l.type === 'error');
-      hintBox.innerHTML = getErrorHint(firstError ? firstError.text : 'Unknown error', code, lessonId);
+      hintBox.innerHTML = buildErrorHintHtml(firstError ? firstError.text : 'Unknown error', lessonId, true);
       hintBox.style.display = 'block';
     }
 
