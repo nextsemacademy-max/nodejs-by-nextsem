@@ -518,6 +518,7 @@ trackFilters.forEach(btn => {
   function setupSwipeGestures() {
     track.addEventListener('touchstart', (e) => {
       startY = e.touches[0].clientY;
+      currentY = startY; // Initialize currentY to prevent jump on tap
       isDragging = true;
       track.style.transition = 'none';
     }, { passive: true });

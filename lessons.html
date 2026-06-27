@@ -69,10 +69,10 @@
 
     /* ══ INSHORTS SWIPE CONTAINER ══ */
     .swipe-container { flex:1; position:relative; overflow:hidden; min-height:0; background:var(--bg-dark); touch-action:none; }
-    .swipe-card { position:absolute; inset:0; display:flex; flex-direction:column; background:var(--bg-dark); will-change:transform; transition:transform 0.42s cubic-bezier(0.4,0,0.2,1); overflow:hidden; touch-action:pan-y; }
-    .sc-active { transform:translateY(0);    z-index:2; }
-    .sc-prev   { transform:translateY(-100%); z-index:1; }
-    .sc-next   { transform:translateY(100%);  z-index:1; }
+    .swipe-card { position:absolute; inset:0; display:flex; flex-direction:column; background:var(--bg-dark); will-change:transform; transition:transform 0.38s cubic-bezier(0.16, 1, 0.3, 1); overflow:hidden; touch-action:pan-y; backface-visibility: hidden; -webkit-backface-visibility: hidden; }
+    .sc-active { transform:translate3d(0, 0, 0);    z-index:2; }
+    .sc-prev   { transform:translate3d(0, -100%, 0); z-index:1; }
+    .sc-next   { transform:translate3d(0, 100%, 0);  z-index:1; }
 
     /* Code hero */
     .sc-hero { flex-shrink:0; height:140px; background-color:#0d1117; border-bottom:1px solid rgba(255,255,255,0.06); position:relative; overflow:hidden; display:flex; align-items:flex-start; padding:1.1rem 1.2rem 0; }

@@ -340,16 +340,38 @@ console.log("✨ Welcome to NextSem!");</textarea>
       const maxIndex = cards.length - 1;
       let startY = 0;
       let startX = 0;
+      let currentY = 0;
+      let currentX = 0;
+      let isDragging = false;
 
-      function updateSlidePositions() {
+      function updateSlidePositions(offsetY = 0) {
         cards.forEach((card, pos) => {
-          card.className = 'swipe-card';
-          if (pos === activeIndex) {
-            card.classList.add('sc-active');
-          } else if (pos < activeIndex) {
-            card.classList.add('sc-prev');
+          if (offsetY === 0) {
+            card.style.transition = 'transform 0.38s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.38s ease';
           } else {
-            card.classList.add('sc-next');
+            card.style.transition = 'none';
+          }
+
+          if (pos === activeIndex) {
+            card.style.transform = `translate3d(0, ${offsetY}px, 0)`;
+            card.style.opacity = 1 - Math.abs(offsetY) / (window.innerHeight * 0.85);
+            card.style.zIndex = 2;
+            card.style.visibility = 'visible';
+          } else if (pos === activeIndex - 1 && offsetY > 0) {
+            card.style.transform = `translate3d(0, calc(-100% + ${offsetY}px), 0)`;
+            card.style.opacity = offsetY / (window.innerHeight * 0.85);
+            card.style.zIndex = 1;
+            card.style.visibility = 'visible';
+          } else if (pos === activeIndex + 1 && offsetY < 0) {
+            card.style.transform = `translate3d(0, calc(100% + ${offsetY}px), 0)`;
+            card.style.opacity = -offsetY / (window.innerHeight * 0.85);
+            card.style.zIndex = 1;
+            card.style.visibility = 'visible';
+          } else {
+            card.style.transform = pos < activeIndex ? 'translate3d(0, -100%, 0)' : 'translate3d(0, 100%, 0)';
+            card.style.opacity = 0;
+            card.style.zIndex = 1;
+            card.style.visibility = 'hidden';
           }
         });
 
@@ -361,36 +383,88 @@ console.log("✨ Welcome to NextSem!");</textarea>
       function slideTo(index) {
         if (index < 0 || index > maxIndex) return;
         activeIndex = index;
-        updateSlidePositions();
+        updateSlidePositions(0);
       }
 
       window.slideTo = slideTo;
 
       // Touch and Mouse Drag handlers
       const container = document.getElementById('index-swipe-container');
-      let isDragging = false;
       
       if (container) {
-        // Touch handlers
         container.addEventListener('touchstart', e => {
+          const activeCard = cards[activeIndex];
+          const tag = e.target.tagName;
+          if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'BUTTON' || e.target.closest('button') || e.target.closest('a')) {
+            isDragging = false;
+            return;
+          }
+          isDragging = true;
           startY = e.touches[0].clientY;
           startX = e.touches[0].clientX;
+          currentY = startY;
+          currentX = startX;
         }, { passive: true });
 
+        container.addEventListener('touchmove', e => {
+          if (!isDragging) return;
+          currentY = e.touches[0].clientY;
+          currentX = e.touches[0].clientX;
+          const dy = currentY - startY;
+          const dx = Math.abs(currentX - startX);
+
+          if (dx > Math.abs(dy) * 1.2) {
+            isDragging = false;
+            return;
+          }
+
+          const activeCard = cards[activeIndex];
+          if (!activeCard) return;
+
+          const isScrollable = activeCard.scrollHeight > activeCard.clientHeight;
+          if (isScrollable) {
+            const atTop = activeCard.scrollTop === 0;
+            const atBottom = Math.abs(activeCard.scrollHeight - activeCard.clientHeight - activeCard.scrollTop) < 2;
+
+            if (dy > 0 && !atTop) return;
+            if (dy < 0 && !atBottom) return;
+          }
+
+          e.preventDefault();
+
+          let dampedDy = dy;
+          if ((activeIndex === 0 && dy > 0) || (activeIndex === maxIndex && dy < 0)) {
+            dampedDy = dy * 0.3;
+          }
+
+          updateSlidePositions(dampedDy);
+        }, { passive: false });
+
         container.addEventListener('touchend', e => {
-          const dy = e.changedTouches[0].clientY - startY;
-          const dx = Math.abs(e.changedTouches[0].clientX - startX);
-          
-          if (Math.abs(dy) < 50 || dx > 75) return;
-          
-          if (dy < 0) {
-            slideTo(activeIndex + 1);
+          if (!isDragging) return;
+          isDragging = false;
+          const dy = currentY - startY;
+          const dx = Math.abs(currentX - startX);
+          const threshold = window.innerHeight * 0.15;
+
+          if (Math.abs(dy) < 10) {
+            updateSlidePositions(0);
+            return;
+          }
+
+          if (Math.abs(dy) > threshold && dx < Math.abs(dy) * 1.5) {
+            if (dy < 0 && activeIndex < maxIndex) {
+              slideTo(activeIndex + 1);
+            } else if (dy > 0 && activeIndex > 0) {
+              slideTo(activeIndex - 1);
+            } else {
+              updateSlidePositions(0);
+            }
           } else {
-            slideTo(activeIndex - 1);
+            updateSlidePositions(0);
           }
         }, { passive: true });
 
-        // Mouse drag handlers (Desktop support)
         container.addEventListener('mousedown', e => {
           const tag = e.target.tagName;
           if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'BUTTON' || e.target.closest('button') || e.target.closest('a')) {
@@ -399,7 +473,24 @@ console.log("✨ Welcome to NextSem!");</textarea>
           isDragging = true;
           startY = e.clientY;
           startX = e.clientX;
-          e.preventDefault(); // Prevents default text selection / image outline drags
+          currentY = startY;
+          currentX = startX;
+          cards.forEach(card => card.style.transition = 'none');
+        });
+
+        container.addEventListener('mousemove', e => {
+          if (!isDragging) return;
+          e.preventDefault();
+          currentY = e.clientY;
+          currentX = e.clientX;
+          const dy = currentY - startY;
+          
+          let dampedDy = dy;
+          if ((activeIndex === 0 && dy > 0) || (activeIndex === maxIndex && dy < 0)) {
+            dampedDy = dy * 0.3;
+          }
+          
+          updateSlidePositions(dampedDy);
         });
 
         container.addEventListener('mouseup', e => {
@@ -408,18 +499,26 @@ console.log("✨ Welcome to NextSem!");</textarea>
           
           const dy = e.clientY - startY;
           const dx = Math.abs(e.clientX - startX);
+          const threshold = window.innerHeight * 0.15;
           
-          if (Math.abs(dy) < 50 || dx > 75) return;
-          
-          if (dy < 0) {
-            slideTo(activeIndex + 1);
+          if (Math.abs(dy) > threshold && dx < Math.abs(dy) * 1.5) {
+            if (dy < 0 && activeIndex < maxIndex) {
+              slideTo(activeIndex + 1);
+            } else if (dy > 0 && activeIndex > 0) {
+              slideTo(activeIndex - 1);
+            } else {
+              updateSlidePositions(0);
+            }
           } else {
-            slideTo(activeIndex - 1);
+            updateSlidePositions(0);
           }
         });
 
         container.addEventListener('mouseleave', () => {
-          isDragging = false;
+          if (isDragging) {
+            isDragging = false;
+            updateSlidePositions(0);
+          }
         });
 
         // Mouse Wheel Handler (with scrollable card check and throttling)

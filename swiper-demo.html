@@ -638,6 +638,7 @@
 
       onTouchStart(e) {
         this.startY = e.touches[0].clientY;
+        this.currentY = this.startY; // Initialize currentY to prevent jump on tap
         this.isDragging = true;
         this.track.style.transition = 'none'; // Lock animation frames
       }

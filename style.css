@@ -3431,15 +3431,17 @@ body.light-mode .sidebar-logged-out .google-sign-in-btn:hover {
   text-align: center;
   padding: 2.2rem 1.5rem;
   background: var(--bg-dark);
-  will-change: transform;
-  transition: transform 0.42s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.3s ease, visibility 0.3s ease;
+  will-change: transform, opacity;
+  transition: transform 0.38s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.38s ease;
   overflow-y: auto;
   user-select: none;
   -webkit-user-select: none;
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
 }
 
 #index-swipe-container .swipe-card.sc-active {
-  transform: translateY(0);
+  transform: translate3d(0, 0, 0);
   z-index: 2;
   opacity: 1;
   visibility: visible;
@@ -3447,7 +3449,7 @@ body.light-mode .sidebar-logged-out .google-sign-in-btn:hover {
 }
 
 #index-swipe-container .swipe-card.sc-prev {
-  transform: translateY(-100%);
+  transform: translate3d(0, -100%, 0);
   z-index: 1;
   opacity: 0;
   visibility: hidden;
@@ -3455,7 +3457,7 @@ body.light-mode .sidebar-logged-out .google-sign-in-btn:hover {
 }
 
 #index-swipe-container .swipe-card.sc-next {
-  transform: translateY(100%);
+  transform: translate3d(0, 100%, 0);
   z-index: 1;
   opacity: 0;
   visibility: hidden;
