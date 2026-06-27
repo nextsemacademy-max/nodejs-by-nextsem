@@ -551,23 +551,60 @@
 
     @media (max-width: 768px) {
       body {
-        padding-bottom: 130px !important;
+        padding-bottom: 80px !important;
       }
       .notebook-bottom-nav {
         display: flex;
-        flex-direction: column;
+        justify-content: space-around;
+        align-items: center;
         position: fixed;
-        bottom: 60px;
+        bottom: 0;
         left: 0;
         right: 0;
-        z-index: 1050;
-        background: rgba(15, 23, 42, 0.97);
+        height: 60px;
+        height: calc(60px + env(safe-area-inset-bottom));
+        z-index: 9999;
+        background: rgba(15, 23, 42, 0.96);
         backdrop-filter: blur(12px);
         border-top: 1px solid rgba(255,255,255,0.08);
-        padding: 10px 14px;
-        gap: 8px;
+        padding: 0 16px;
+        padding-bottom: env(safe-area-inset-bottom);
         box-shadow: 0 -8px 32px rgba(0,0,0,0.5);
       }
+      
+      .nb-nav-btn {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        background: none;
+        border: none;
+        color: var(--text-muted);
+        font-family: var(--font-sans);
+        font-size: 0.72rem;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.2s;
+        text-decoration: none;
+        gap: 4px;
+        flex: 1;
+        height: 100%;
+      }
+      
+      .nb-nav-btn:active {
+        color: var(--primary);
+      }
+      
+      .nb-nav-btn.home-btn {
+        color: var(--text);
+      }
+      
+      .nb-nav-btn:disabled {
+        opacity: 0.25;
+        cursor: not-allowed;
+        pointer-events: none;
+      }
+    }
 
       .mnav-top-row {
         display: flex;
@@ -774,33 +811,24 @@
     </div>
   </header>
 
-  <!-- Fixed Bottom Nav (mobile): Lesson selector + navigation -->
+  <!-- Fixed Bottom Nav (mobile): Home + Syllabus + Prev + Next -->
   <nav class="notebook-bottom-nav" aria-label="Mobile navigation">
-    <!-- Top row: Lesson selector + Next lesson button -->
-    <div class="mnav-top-row">
-      <!-- Custom dark dropdown -->
-      <div class="mnav-dropdown" id="mnav-dropdown">
-        <button class="mnav-dropdown-btn" id="mnav-dropdown-btn" onclick="toggleMnavDropdown()" type="button">
-          <span id="mnav-selected-label">📖 HTTP Server</span>
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" width="14" height="14"><polyline points="6 9 12 15 18 9"></polyline></svg>
-        </button>
-        <div class="mnav-dropdown-list" id="mnav-dropdown-list">
-          <button class="mnav-dropdown-item active" onclick="selectMnavLesson('http-server', '📖 HTTP Server')" type="button">
-            📖 HTTP Server
-          </button>
-          <button class="mnav-dropdown-item" onclick="selectMnavLesson('fs-read', '📂 Reading Files')" type="button">
-            📂 Reading Files
-          </button>
-          <button class="mnav-dropdown-item" onclick="selectMnavLesson('custom-modules', '🧩 Custom Modules')" type="button">
-            🧩 Custom Modules
-          </button>
-        </div>
-      </div>
-      <button id="next-lesson-btn-mobile" onclick="goToNextLesson()" class="mnav-next-btn" style="display:none;">
-        Next
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" width="13" height="13"><polyline points="9 18 15 12 9 6"></polyline></svg>
-      </button>
-    </div>
+    <a href="lessons.html" class="nb-nav-btn home-btn">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="20" height="20"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+      <span>Home</span>
+    </a>
+    <a href="syllabus.html" class="nb-nav-btn syllabus-btn" style="color: var(--text-muted);">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="20" height="20"><path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H20v20H6.5a2.5 2.5 0 0 1-2.5-2.5Z"/><path d="M6 6h10M6 10h10"/></svg>
+      <span>Syllabus</span>
+    </a>
+    <button id="prev-lesson-btn-mobile" onclick="goToPrevLesson()" class="nb-nav-btn" disabled>
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="18" height="18"><polyline points="15 18 9 12 15 6"></polyline></svg>
+      <span>Prev</span>
+    </button>
+    <button id="next-lesson-btn-mobile" onclick="goToNextLesson()" class="nb-nav-btn">
+      <span>Next</span>
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="18" height="18"><polyline points="9 18 15 12 9 6"></polyline></svg>
+    </button>
   </nav>
 
   <div class="workspace">
@@ -1073,18 +1101,49 @@
       if (selMobile) selMobile.value = lessonId;
       renderNotebookLesson(lessonId);
       updateNextLessonButtonVisibility();
+      updateNotebookNavButtons();
     }
 
     function updateNextLessonButtonVisibility() {
       const btnNext = document.getElementById('next-lesson-btn');
-      const btnNextMobile = document.getElementById('next-lesson-btn-mobile');
-      if (!btnNext && !btnNextMobile) return;
+      if (!btnNext) return;
       if (window.notebookLessons) {
         const keys = Object.keys(window.notebookLessons);
         const curIdx = keys.indexOf(currentLessonId);
         const show = curIdx >= 0 && curIdx < keys.length - 1;
-        if (btnNext) btnNext.style.display = show ? 'flex' : 'none';
-        if (btnNextMobile) btnNextMobile.style.display = show ? 'flex' : 'none';
+        btnNext.style.display = show ? 'flex' : 'none';
+      }
+    }
+
+    function updateNotebookNavButtons() {
+      const btnPrevMobile = document.getElementById('prev-lesson-btn-mobile');
+      const btnNextMobile = document.getElementById('next-lesson-btn-mobile');
+      if (window.notebookLessons) {
+        const keys = Object.keys(window.notebookLessons);
+        const curIdx = keys.indexOf(currentLessonId);
+        
+        if (btnPrevMobile) {
+          btnPrevMobile.disabled = (curIdx <= 0);
+        }
+        if (btnNextMobile) {
+          btnNextMobile.disabled = (curIdx >= keys.length - 1);
+        }
+      }
+    }
+
+    function goToPrevLesson() {
+      if (window.notebookLessons) {
+        const keys = Object.keys(window.notebookLessons);
+        const curIdx = keys.indexOf(currentLessonId);
+        if (curIdx > 0) {
+          const prevLessonId = keys[curIdx - 1];
+          changeNotebookLesson(prevLessonId);
+          
+          // Update URL parameter dynamically without reload
+          const newUrl = new URL(window.location);
+          newUrl.searchParams.set('lesson', prevLessonId);
+          window.history.pushState({}, '', newUrl);
+        }
       }
     }
 
@@ -1325,6 +1384,7 @@
         
         renderNotebookLesson(currentLessonId);
         updateNextLessonButtonVisibility();
+        updateNotebookNavButtons();
       } catch (err) {
         console.error('Error loading dynamic lessons:', err);
       }
@@ -1340,7 +1400,5 @@
   <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-analytics-compat.js"></script>
   <script src="firebase.js?v=39"></script>
-  <!-- Mobile Navigation Helper -->
-  <script src="mobile-nav.js?v=39"></script>
 </body>
 </html>
