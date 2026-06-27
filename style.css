@@ -3903,6 +3903,13 @@ body.light-mode .mini-sandbox .mini-console {
   position: relative;
 }
 
+.card-meta {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  width: 100%;
+}
+
 @media (max-width: 768px) {
   .swipe-container .slide {
     padding: 12px 10px;
