@@ -28,6 +28,11 @@
       -webkit-tap-highlight-color: transparent;
     }
 
+    html, body {
+      overflow-x: hidden !important;
+      max-width: 100%;
+    }
+
     body {
       background-color: var(--bg-color);
       color: var(--text);
@@ -144,7 +149,9 @@
     }
 
     .tabs::-webkit-scrollbar {
-      display: none;
+      display: none !important;
+      width: 0 !important;
+      height: 0 !important;
     }
 
     .tab-btn {

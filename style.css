@@ -31,13 +31,14 @@
   --transition: all 0.3s cubic-bezier(0.4,0,0.2,1);
 }
 
-html { scroll-behavior: smooth; overflow-x: hidden; }
+html { scroll-behavior: smooth; overflow-x: hidden !important; max-width: 100%; }
 
 body {
   font-family: var(--font-sans);
   background: #05080c;
   color: var(--text-primary);
-  overflow-x: hidden;
+  overflow-x: hidden !important;
+  max-width: 100%;
   line-height: 1.6;
   display: flex;
   justify-content: center;
