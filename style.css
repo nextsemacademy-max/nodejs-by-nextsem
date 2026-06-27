@@ -3892,7 +3892,8 @@ body.light-mode .mini-sandbox .mini-console {
   border-radius: 16px;
   width: 100%;
   max-width: 600px;
-  max-height: 90%;
+  height: 88%;
+  max-height: 92%;
   padding: 24px;
   box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.3);
   display: flex;
@@ -3900,6 +3901,18 @@ body.light-mode .mini-sandbox .mini-console {
   gap: 16px;
   overflow-y: auto;
   position: relative;
+}
+
+@media (max-width: 768px) {
+  .swipe-container .slide {
+    padding: 12px 10px;
+  }
+  .swipe-container .slide .card {
+    height: 94%;
+    padding: 20px 18px;
+    gap: 14px;
+    border-radius: 12px;
+  }
 }
 
 /* Style scrollbars for cards and code blocks */
