@@ -186,6 +186,23 @@
           <!-- Injected dynamically -->
         </div>
 
+        <!-- Suggested Search Topics -->
+        <div id="mobile-search-suggestions" style="display: none; margin-bottom: 1.25rem;">
+          <div style="font-size: 0.75rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 0.5rem; display: flex; align-items: center; gap: 4px;">
+            <span>💡</span> Popular Topics
+          </div>
+          <div class="suggestion-tags-list" style="display: flex; flex-wrap: wrap; gap: 6px;">
+            <button class="s-tag-btn" data-query="Event Loop">Event Loop ⚡</button>
+            <button class="s-tag-btn" data-query="Middleware">Middleware 🚂</button>
+            <button class="s-tag-btn" data-query="JWT">JWT Security 🔒</button>
+            <button class="s-tag-btn" data-query="Jest">Jest Testing 🧪</button>
+            <button class="s-tag-btn" data-query="Database">Database 🗄️</button>
+            <button class="s-tag-btn" data-query="Worker">Workers 🖥️</button>
+            <button class="s-tag-btn" data-query="Asynchronous">Async Promises ⏳</button>
+            <button class="s-tag-btn" data-query="Package">NPM Packages 📦</button>
+          </div>
+        </div>
+
         <!-- Profile Account Card -->
         <div class="overlay-user-card" id="mobile-user-card">
           <!-- Injected dynamically based on Auth state -->
@@ -519,6 +536,8 @@
           if (settingsSec) settingsSec.style.display = 'block';
           const headerTitle = overlayProfile.querySelector('.overlay-header h3');
           if (headerTitle) headerTitle.textContent = 'Menu & Account';
+          const suggestions = document.getElementById('mobile-search-suggestions');
+          if (suggestions) suggestions.style.display = 'none';
 
           overlayProfile.style.display = 'flex';
           btnProfile.classList.add('active');
@@ -546,6 +565,8 @@
           if (settingsSec) settingsSec.style.display = 'none';
           const headerTitle = overlayProfile.querySelector('.overlay-header h3');
           if (headerTitle) headerTitle.textContent = 'Search Lessons';
+          const suggestions = document.getElementById('mobile-search-suggestions');
+          if (suggestions) suggestions.style.display = 'block';
 
           overlayProfile.style.display = 'flex';
           btnSearch.classList.add('active');
@@ -589,6 +610,19 @@
     // 4. Search Filter Logic
     const searchInput = document.getElementById('mobile-search-input');
     const searchResults = document.getElementById('mobile-search-results');
+
+    // Hook Popular Topic suggestion tags clicks
+    const suggestionBtns = document.querySelectorAll('.s-tag-btn');
+    suggestionBtns.forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        e.preventDefault();
+        const query = btn.getAttribute('data-query');
+        if (searchInput) {
+          searchInput.value = query;
+          searchInput.dispatchEvent(new Event('input', { bubbles: true }));
+        }
+      });
+    });
 
     function renderSearchResults(query = '') {
       searchResults.innerHTML = '';

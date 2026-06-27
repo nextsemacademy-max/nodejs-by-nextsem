@@ -4170,4 +4170,28 @@ body.light-mode .scroll-hint-arrow-right {
   }
 }
 
+.s-tag-btn {
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid var(--border);
+  padding: 6px 12px;
+  border-radius: 20px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  font-family: var(--font-heading);
+}
+
+.s-tag-btn:hover {
+  background: rgba(104, 160, 99, 0.08) !important;
+  border-color: rgba(104, 160, 99, 0.4) !important;
+  color: var(--node-green-light) !important;
+}
+
+body.light-mode .s-tag-btn {
+  background: rgba(0, 0, 0, 0.02);
+  color: var(--text-primary);
+}
+
 
