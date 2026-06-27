@@ -121,7 +121,7 @@
     // Determine active tab based on current page
     const pathname = window.location.pathname;
     const isHome = pathname.endsWith('index.html') || pathname.endsWith('/') || pathname === '';
-    const isLessons = pathname.includes('lessons.html') || pathname.includes('swiper-demo.html');
+    const isLessons = pathname.includes('lessons.html') || pathname.includes('swiper-demo.html') || pathname.includes('interactive-notebook.html') || pathname.includes('syllabus.html');
     const isPlayground = pathname.includes('playground.html');
     
     bottomNav.innerHTML = `
