@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>Interactive Syllabus - NextSem Staging</title>
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;1,300;1,400;1,500;1,600;1,700;1,800&family=Geist+Mono:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css?v=39">
   
   <style>
     :root {
@@ -437,6 +438,13 @@
       color: var(--text-muted);
       cursor: not-allowed;
     }
+
+    /* Mobile bottom navigation spacing overrides */
+    @media (max-width: 900px) {
+      body {
+        padding-bottom: 75px !important;
+      }
+    }
   </style>
   <!-- amp ads -->
   <script async custom-element="amp-auto-ads" src="https://cdn.ampproject.org/v0/amp-auto-ads-0.1.js"></script>
@@ -452,7 +460,7 @@
 
   <!-- Header -->
   <header class="header">
-    <div class="title-group">
+    <a href="lessons.html" class="title-group" style="text-decoration: none; cursor: pointer; display: flex; align-items: center; gap: 10px;">
       <!-- SVG Logo Icon -->
       <svg class="logo-icon" viewBox="0 0 84 64" fill="none" stroke="#10b981" stroke-width="11" stroke-linecap="round" stroke-linejoin="round" style="width:32px;height:24px;flex-shrink:0;">
         <path d="M 16 52 L 16 26 C 16 17.5 22.5 11 30.5 11 C 38.5 11 45 17.5 45 26 L 45 42 C 45 48 49 53 56 53 C 63 53 67 48 67 42 C 67 36 63 32 56 32 C 49 32 45 28 45 22 C 45 16 49 11 56 11 C 63 11 67 16 67 22" />
@@ -462,8 +470,7 @@
         <span>NextSem</span>
       </div>
       <span class="badge">Syllabus Grid</span>
-    </div>
-    <a href="lessons.html" class="back-btn">Exit</a>
+    </a>
   </header>
 
   <div class="container">
@@ -974,5 +981,13 @@
     // Initial render
     renderGrid();
   </script>
+  <!-- Firebase SDKs & Custom config -->
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-analytics-compat.js"></script>
+  <script src="firebase.js?v=39"></script>
+  <!-- Mobile Navigation Helper -->
+  <script src="mobile-nav.js?v=39"></script>
 </body>
 </html>

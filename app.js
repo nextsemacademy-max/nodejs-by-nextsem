@@ -4,6 +4,58 @@
 
 const lessons = window.lessons || [];
 
+function getErrorHint(errorText, code, lessonId) {
+  const err = String(errorText || '').toLowerCase();
+  
+  if (err.includes('require is not defined')) {
+    return `💡 <strong>Hint:</strong> <code>require()</code> is not defined. In modern standard ES Modules, use <code>import</code> instead of <code>require()</code>. (Note: Core modules are mocked in this sandbox using <code>require</code>).`;
+  }
+  if (err.includes('fs.') && (err.includes('no such file') || err.includes('mock'))) {
+    return `💡 <strong>Hint:</strong> The File System (<code>fs</code>) module is virtualized here. Use mock paths like <code>'input.txt'</code> or <code>'app.js'</code>, or check your code for typos in file read/write methods.`;
+  }
+  if (err.includes('is not defined')) {
+    const match = errorText.match(/(\w+) is not defined/);
+    const varName = match ? match[1] : 'variable';
+    return `💡 <strong>Hint:</strong> <code>${varName}</code> is not defined. Ensure you declared it with <code>const</code>, <code>let</code>, or <code>var</code> before using it, and that its name is spelled correctly.`;
+  }
+  if (err.includes('unexpected token') || err.includes('unexpected identifier') || err.includes('syntaxerror')) {
+    return `💡 <strong>Hint:</strong> Syntax error detected! Check for unclosed parentheses <code>()</code>, curly braces <code>{}</code>, square brackets <code>[]</code>, or missing/extra commas and quotes.`;
+  }
+  if (err.includes('is not a function')) {
+    const match = errorText.match(/(\w+(?:\.\w+)*) is not a function/);
+    const funcName = match ? match[1] : 'method';
+    return `💡 <strong>Hint:</strong> <code>${funcName}</code> is not a function. Check if you spelled the method name correctly or if it belongs to a different object.`;
+  }
+  if (err.includes('cannot read properties of undefined') || err.includes('cannot read property')) {
+    return `💡 <strong>Hint:</strong> Attempted to access properties of an <code>undefined</code> or <code>null</code> object. Make sure the object is initialized before reading its properties.`;
+  }
+  if (err.includes('await is only valid in async') || err.includes('await is a reserved word')) {
+    return `💡 <strong>Hint:</strong> <code>await</code> is only valid inside <code>async</code> functions. Try wrapping your code in an async block: <br><code style="display:block; background:rgba(0,0,0,0.2); padding:4px 8px; border-radius:4px; margin-top:4px; font-family:var(--font-mono); font-size:0.75rem;">(async () => {<br>&nbsp;&nbsp;await ...<br>})();</code>`;
+  }
+  if (err.includes('const assignment') || err.includes('assignment to constant variable')) {
+    return `💡 <strong>Hint:</strong> Assignment to a constant variable. If you need to reassign this variable, declare it with <code>let</code> instead of <code>const</code>.`;
+  }
+  if (err.includes('unexpected string') || err.includes('unexpected number')) {
+    return `💡 <strong>Hint:</strong> Check for missing operators, like a plus sign <code>+</code> for string concatenation, or a missing semicolon/comma between expressions.`;
+  }
+  
+  // Lesson-specific custom hints
+  if (lessonId === 'hello-world') {
+    return `💡 <strong>Hint:</strong> Make sure you are using <code>console.log()</code> to print out string messages correctly, closed within quotes.`;
+  }
+  if (lessonId === 'modules') {
+    return `💡 <strong>Hint:</strong> Check if you required math functions via <code>require('./math')</code> or exported them with <code>module.exports</code>.`;
+  }
+  if (lessonId === 'os-process') {
+    return `💡 <strong>Hint:</strong> Check your module name: <code>require('os')</code>. Check process properties like <code>process.env</code>.`;
+  }
+  if (lessonId === 'async') {
+    return `💡 <strong>Hint:</strong> Recall that asynchronous callbacks receive error as the first parameter: <code>(err, data) => { ... }</code>.`;
+  }
+
+  return `💡 <strong>Hint:</strong> Check your variable declarations, correct spelling of keywords, and verify all brackets and parentheses match.`;
+}
+
 /* ── Navbar scroll effect ── */
 const navbar = document.getElementById('navbar');
 window.addEventListener('scroll', () => {
@@ -921,6 +973,8 @@ trackFilters.forEach(btn => {
           </button>
         </div>
 
+        <div class="run-hint-box" id="run-hint-${pos}" style="display: none; margin-top: 8px; font-size: 0.78rem; color: #fbbf24; background: rgba(251, 191, 36, 0.08); border: 1px solid rgba(251, 191, 36, 0.2); padding: 8px 12px; border-radius: 6px; width: 100%; box-sizing: border-box;"></div>
+
         <div class="terminal-box" id="terminal-${pos}"></div>
       </div>
       
@@ -1065,6 +1119,12 @@ trackFilters.forEach(btn => {
     const term = document.getElementById(`terminal-${pos}`);
     if (!term) return;
 
+    const hintBox = document.getElementById(`run-hint-${pos}`);
+    if (hintBox) {
+      hintBox.style.display = 'none';
+      hintBox.innerHTML = '';
+    }
+
     if (terminalTimers[pos]) {
       clearTimeout(terminalTimers[pos]);
       terminalTimers[pos] = null;
@@ -1112,6 +1172,12 @@ trackFilters.forEach(btn => {
     });
 
     const hasError = logs.some(l => l.type === 'error');
+    if (hasError && hintBox) {
+      const firstError = logs.find(l => l.type === 'error');
+      hintBox.innerHTML = getErrorHint(firstError ? firstError.text : 'Unknown error', code, lessonId);
+      hintBox.style.display = 'block';
+    }
+
     lines.push({
       type: hasError ? 'error' : 'success',
       text: hasError ? '✗ Execution failed.' : '✔ Execution finished successfully!'
@@ -1175,6 +1241,12 @@ trackFilters.forEach(btn => {
     const term = document.getElementById('detail-terminal');
     if (!term) return;
 
+    const hintBox = document.getElementById('detail-run-hint');
+    if (hintBox) {
+      hintBox.style.display = 'none';
+      hintBox.innerHTML = '';
+    }
+
     const timerKey = 'detail';
 
     if (terminalTimers[timerKey]) {
@@ -1220,6 +1292,12 @@ trackFilters.forEach(btn => {
     });
 
     const hasError = logs.some(l => l.type === 'error');
+    if (hasError && hintBox) {
+      const firstError = logs.find(l => l.type === 'error');
+      hintBox.innerHTML = getErrorHint(firstError ? firstError.text : 'Unknown error', code, lessonId);
+      hintBox.style.display = 'block';
+    }
+
     lines.push({
       type: hasError ? 'error' : 'success',
       text: hasError ? '✗ Execution failed.' : '✔ Execution finished successfully!'
@@ -1378,11 +1456,14 @@ trackFilters.forEach(btn => {
           <button class="bcopy" id="bcopy-btn">Copy</button>
         </div>
         <textarea class="sc-code-textarea" id="detail-code-textarea" style="background: #0d1117; color: #e6edf3; border: none; padding: 12px; font-family: var(--font-mono); font-size: 0.8rem; line-height: 1.5; resize: none; width: 100%; outline: none; box-sizing: border-box; display: block;" spellcheck="false">${lesson.code.replace(/<[^>]+>/g, '')}</textarea>
-        <div class="detail-editor-actions" style="padding: 10px; border-top: 1px solid rgba(255,255,255,0.05); display: flex; gap: 8px; background: rgba(255,255,255,0.01);">
-          <button class="run-btn" id="detail-run-btn" style="background: linear-gradient(135deg, var(--node-green), var(--node-green-light)); color: white; border: none; padding: 8px 14px; border-radius: 6px; font-weight: 700; cursor: pointer; display: flex; align-items: center; gap: 6px; font-size: 0.78rem;">
-            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="margin-bottom:-1px;"><polygon points="5 3 19 12 5 21 5 3"/></svg>
-            <span>Run Application</span>
-          </button>
+        <div class="detail-editor-actions" style="padding: 10px; border-top: 1px solid rgba(255,255,255,0.05); display: flex; flex-direction: column; gap: 8px; background: rgba(255,255,255,0.01);">
+          <div style="display: flex; gap: 8px;">
+            <button class="run-btn" id="detail-run-btn" style="background: linear-gradient(135deg, var(--node-green), var(--node-green-light)); color: white; border: none; padding: 8px 14px; border-radius: 6px; font-weight: 700; cursor: pointer; display: flex; align-items: center; gap: 6px; font-size: 0.78rem;">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="margin-bottom:-1px;"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+              <span>Run Application</span>
+            </button>
+          </div>
+          <div class="run-hint-box" id="detail-run-hint" style="display: none; margin-top: 4px; font-size: 0.78rem; color: #fbbf24; background: rgba(251, 191, 36, 0.08); border: 1px solid rgba(251, 191, 36, 0.2); padding: 8px 12px; border-radius: 6px; width: 100%; box-sizing: border-box;"></div>
         </div>
         <div class="terminal-box" id="detail-terminal"></div>
       </div>
