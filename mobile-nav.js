@@ -139,6 +139,13 @@
         </svg>
         <span>Lessons</span>
       </button>
+      <button class="bottom-nav-btn" id="bottom-nav-search" aria-label="Search">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" width="20" height="20" style="margin-bottom:2px;">
+          <circle cx="11" cy="11" r="8"></circle>
+          <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+        </svg>
+        <span>Search</span>
+      </button>
       <button class="bottom-nav-btn ${isPlayground ? 'active' : ''}" id="bottom-nav-playground" aria-label="Playground">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" width="20" height="20" style="margin-bottom:2px;">
           <polyline points="16 18 22 12 16 6"></polyline>
@@ -270,6 +277,7 @@
     // 3. Setup Button Event Listeners
     const btnHome = document.getElementById('bottom-nav-home');
     const btnLessons = document.getElementById('bottom-nav-lessons');
+    const btnSearch = document.getElementById('bottom-nav-search');
     const btnPlayground = document.getElementById('bottom-nav-playground');
     const btnProfile = document.getElementById('bottom-nav-profile');
 
@@ -448,6 +456,7 @@
     function closeAllOverlays() {
       overlayProfile.style.display = 'none';
       if (btnProfile) btnProfile.classList.remove('active');
+      if (btnSearch) btnSearch.classList.remove('active');
       
       // restore active states
       if (isHome && btnHome) btnHome.classList.add('active');
@@ -500,11 +509,58 @@
         } else {
           closeAllOverlays();
           syncProfileState();
+
+          // Restore visible sections for Menu mode
+          const userCard = document.getElementById('mobile-user-card');
+          if (userCard) userCard.style.display = 'block';
+          const menuLinks = overlayProfile.querySelector('.overlay-menu-links');
+          if (menuLinks) menuLinks.style.display = 'flex';
+          const settingsSec = overlayProfile.querySelector('.overlay-settings-sec');
+          if (settingsSec) settingsSec.style.display = 'block';
+          const headerTitle = overlayProfile.querySelector('.overlay-header h3');
+          if (headerTitle) headerTitle.textContent = 'Menu & Account';
+
           overlayProfile.style.display = 'flex';
           btnProfile.classList.add('active');
           if (btnHome) btnHome.classList.remove('active');
           if (btnLessons) btnLessons.classList.remove('active');
           if (btnPlayground) btnPlayground.classList.remove('active');
+          if (btnSearch) btnSearch.classList.remove('active');
+        }
+      });
+    }
+
+    if (btnSearch) {
+      btnSearch.addEventListener('click', () => {
+        if (overlayProfile.style.display === 'flex' && btnSearch.classList.contains('active')) {
+          closeAllOverlays();
+        } else {
+          closeAllOverlays();
+
+          // Hide Menu sections for dedicated Search mode
+          const userCard = document.getElementById('mobile-user-card');
+          if (userCard) userCard.style.display = 'none';
+          const menuLinks = overlayProfile.querySelector('.overlay-menu-links');
+          if (menuLinks) menuLinks.style.display = 'none';
+          const settingsSec = overlayProfile.querySelector('.overlay-settings-sec');
+          if (settingsSec) settingsSec.style.display = 'none';
+          const headerTitle = overlayProfile.querySelector('.overlay-header h3');
+          if (headerTitle) headerTitle.textContent = 'Search Lessons';
+
+          overlayProfile.style.display = 'flex';
+          btnSearch.classList.add('active');
+          if (btnHome) btnHome.classList.remove('active');
+          if (btnLessons) btnLessons.classList.remove('active');
+          if (btnPlayground) btnPlayground.classList.remove('active');
+          if (btnProfile) btnProfile.classList.remove('active');
+
+          // Focus input box
+          setTimeout(() => {
+            const searchInput = document.getElementById('mobile-search-input');
+            if (searchInput) {
+              searchInput.focus();
+            }
+          }, 100);
         }
       });
     }
