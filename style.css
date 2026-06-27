@@ -4192,4 +4192,16 @@ body.light-mode .s-tag-btn {
   color: var(--text-primary);
 }
 
+body.sv .mobile-bottom-nav {
+  display: none !important;
+}
+
+body.sv #view-content {
+  bottom: 0 !important;
+}
+
+body.sv .lbn {
+  padding-bottom: calc(0.75rem + env(safe-area-inset-bottom, 0px)) !important;
+}
+
 
