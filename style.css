@@ -4070,4 +4070,15 @@ body.light-mode .mini-sandbox .mini-console {
   pointer-events: none !important;
 }
 
+@keyframes stackIn {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
 

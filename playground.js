@@ -281,6 +281,7 @@
     if (outputContent) {
       outputContent.innerHTML = '<span class="output-placeholder">Run code to see output here...</span>';
     }
+    stopEventLoopVisualizer();
 
     // Toggle button disabled state
     if (prevBtn) prevBtn.disabled = index === 0;
@@ -410,6 +411,288 @@
     return logs;
   }
 
+  /* ─── Event Loop Visualizer Core ─── */
+  let vizInterval = null;
+  let currentStep = 0;
+  let callStack = [];
+  let microtasks = [];
+  let macrotasks = [];
+  let terminalLogs = [];
+
+  function stopEventLoopVisualizer() {
+    if (vizInterval) {
+      clearInterval(vizInterval);
+      vizInterval = null;
+    }
+    const vizDiv = document.getElementById('event-loop-viz');
+    if (vizDiv) vizDiv.style.display = 'none';
+  }
+
+  function runWithVisualizer(code) {
+    stopEventLoopVisualizer();
+
+    const originalConsole = console;
+    const originalSetTimeout = setTimeout;
+    
+    let activeAsyncOps = 0;
+    let vizSteps = [];
+
+    const mockConsole = {
+      log: (...args) => {
+        const msg = args.map(a => typeof a === 'object' ? JSON.stringify(a) : String(a)).join(' ');
+        vizSteps.push({ type: 'push-stack', value: `console.log("${msg}")` });
+        vizSteps.push({ type: 'print', value: msg, level: 'log' });
+        vizSteps.push({ type: 'pop-stack' });
+      },
+      error: (...args) => {
+        const msg = args.map(a => typeof a === 'object' ? JSON.stringify(a) : String(a)).join(' ');
+        vizSteps.push({ type: 'push-stack', value: `console.error("${msg}")` });
+        vizSteps.push({ type: 'print', value: msg, level: 'error' });
+        vizSteps.push({ type: 'pop-stack' });
+      },
+      warn: (...args) => {
+        const msg = args.map(a => typeof a === 'object' ? JSON.stringify(a) : String(a)).join(' ');
+        vizSteps.push({ type: 'push-stack', value: `console.warn("${msg}")` });
+        vizSteps.push({ type: 'print', value: msg, level: 'warn' });
+        vizSteps.push({ type: 'pop-stack' });
+      }
+    };
+
+    const mockSetTimeout = (cb, ms) => {
+      const label = `cb_timeout_${ms}ms`;
+      vizSteps.push({ type: 'push-stack', value: `setTimeout(..., ${ms}ms)` });
+      vizSteps.push({ type: 'add-macro', value: label });
+      vizSteps.push({ type: 'pop-stack' });
+
+      activeAsyncOps++;
+      originalSetTimeout(() => {
+        vizSteps.push({ type: 'phase', value: 'timers' });
+        vizSteps.push({ type: 'remove-macro', value: label });
+        vizSteps.push({ type: 'push-stack', value: `timeout_cb` });
+        try {
+          cb();
+        } catch(e) {
+          vizSteps.push({ type: 'print', value: e.message, level: 'error' });
+        }
+        vizSteps.push({ type: 'pop-stack' });
+        activeAsyncOps--;
+        checkCompletion();
+      }, ms);
+      return 0;
+    };
+
+    const mockSetImmediate = (cb) => {
+      const label = `cb_immediate`;
+      vizSteps.push({ type: 'push-stack', value: `setImmediate(...)` });
+      vizSteps.push({ type: 'add-macro', value: label });
+      vizSteps.push({ type: 'pop-stack' });
+
+      activeAsyncOps++;
+      originalSetTimeout(() => {
+        vizSteps.push({ type: 'phase', value: 'check' });
+        vizSteps.push({ type: 'remove-macro', value: label });
+        vizSteps.push({ type: 'push-stack', value: `immediate_cb` });
+        try {
+          cb();
+        } catch(e) {
+          vizSteps.push({ type: 'print', value: e.message, level: 'error' });
+        }
+        vizSteps.push({ type: 'pop-stack' });
+        activeAsyncOps--;
+        checkCompletion();
+      }, 0);
+    };
+
+    const mockProcess = {
+      nextTick: (cb) => {
+        const label = `cb_nextTick`;
+        vizSteps.push({ type: 'push-stack', value: `process.nextTick(...)` });
+        vizSteps.push({ type: 'add-micro', value: label });
+        vizSteps.push({ type: 'pop-stack' });
+
+        activeAsyncOps++;
+        originalSetTimeout(() => {
+          vizSteps.push({ type: 'remove-micro', value: label });
+          vizSteps.push({ type: 'push-stack', value: `nextTick_cb` });
+          try {
+            cb();
+          } catch(e) {
+            vizSteps.push({ type: 'print', value: e.message, level: 'error' });
+          }
+          vizSteps.push({ type: 'pop-stack' });
+          activeAsyncOps--;
+          checkCompletion();
+        }, 0);
+      }
+    };
+
+    class FakePromise {
+      static resolve(val) {
+        vizSteps.push({ type: 'push-stack', value: 'Promise.resolve()' });
+        vizSteps.push({ type: 'pop-stack' });
+        return new FakePromise((resolve) => resolve(val));
+      }
+      constructor(executor) {
+        this.thenCbs = [];
+        const resolve = (val) => {
+          activeAsyncOps++;
+          originalSetTimeout(() => {
+            this.thenCbs.forEach(cb => {
+              vizSteps.push({ type: 'remove-micro', value: 'Promise cb' });
+              vizSteps.push({ type: 'push-stack', value: 'Promise then_cb' });
+              try {
+                cb(val);
+              } catch(e) {
+                vizSteps.push({ type: 'print', value: e.message, level: 'error' });
+              }
+              vizSteps.push({ type: 'pop-stack' });
+            });
+            activeAsyncOps--;
+            checkCompletion();
+          }, 0);
+        };
+        try {
+          executor(resolve);
+        } catch (err) {
+          vizSteps.push({ type: 'print', value: err.message, level: 'error' });
+        }
+      }
+      then(cb) {
+        vizSteps.push({ type: 'push-stack', value: 'Promise.then()' });
+        vizSteps.push({ type: 'add-micro', value: 'Promise cb' });
+        vizSteps.push({ type: 'pop-stack' });
+        this.thenCbs.push(cb);
+        return this;
+      }
+    }
+
+    function checkCompletion() {
+      if (activeAsyncOps === 0) {
+        originalSetTimeout(() => {
+          runVisualizerAnimation(vizSteps);
+        }, 100);
+      }
+    }
+
+    try {
+      const patchedCode = code
+        .replace(/\bprocess\.platform\b/g, '"win32"')
+        .replace(/\bprocess\.version\b/g, '"v20.11.0"');
+      const fn = new Function('console', 'setTimeout', 'setImmediate', 'process', 'Promise', 'JSON', 'Math', 'Date', 'Error', 'Array', 'require', patchedCode);
+      fn(mockConsole, mockSetTimeout, mockSetImmediate, mockProcess, FakePromise, JSON, Math, Date, Error, Array, fakeRequire);
+    } catch (err) {
+      vizSteps.push({ type: 'print', value: err.message, level: 'error' });
+    }
+
+    checkCompletion();
+  }
+
+  function runVisualizerAnimation(steps) {
+    currentStep = 0;
+    callStack = [];
+    microtasks = [];
+    macrotasks = [];
+    terminalLogs = [];
+
+    const stackEl = document.getElementById('viz-stack');
+    const microEl = document.getElementById('viz-micro');
+    const macroEl = document.getElementById('viz-macro');
+    const statusEl = document.getElementById('viz-status');
+    const phaseTimers = document.getElementById('phase-timers');
+    const phasePoll = document.getElementById('phase-poll');
+    const phaseCheck = document.getElementById('phase-check');
+
+    if (stackEl) stackEl.innerHTML = '';
+    if (microEl) microEl.innerHTML = '';
+    if (macroEl) macroEl.innerHTML = '';
+    if (statusEl) statusEl.textContent = 'Initializing Animation...';
+    outputContent.innerHTML = '';
+
+    const vizDiv = document.getElementById('event-loop-viz');
+    if (vizDiv) vizDiv.style.display = 'flex';
+
+    vizInterval = setInterval(() => {
+      if (currentStep >= steps.length) {
+        clearInterval(vizInterval);
+        vizInterval = null;
+        if (statusEl) statusEl.textContent = 'Execution finished';
+        return;
+      }
+
+      const step = steps[currentStep];
+      if (step) {
+        switch (step.type) {
+          case 'push-stack':
+            callStack.push(step.value);
+            if (statusEl) statusEl.textContent = `Call Stack: Push ${step.value}`;
+            break;
+          case 'pop-stack':
+            const popped = callStack.pop();
+            if (statusEl) statusEl.textContent = `Call Stack: Pop ${popped || ''}`;
+            break;
+          case 'add-micro':
+            microtasks.push(step.value);
+            if (statusEl) statusEl.textContent = `Microtask Queue: Enqueue ${step.value}`;
+            break;
+          case 'remove-micro':
+            microtasks = microtasks.filter(m => m !== step.value);
+            if (statusEl) statusEl.textContent = `Microtask Queue: Dequeue ${step.value}`;
+            break;
+          case 'add-macro':
+            macrotasks.push(step.value);
+            if (statusEl) statusEl.textContent = `Macrotask Queue: Enqueue ${step.value}`;
+            break;
+          case 'remove-macro':
+            macrotasks = macrotasks.filter(m => m !== step.value);
+            if (statusEl) statusEl.textContent = `Macrotask Queue: Dequeue ${step.value}`;
+            break;
+          case 'print':
+            terminalLogs.push({ type: step.level, text: step.value });
+            const cls = step.level === 'error' ? 'output-error' : step.level === 'warn' ? 'output-warn' : 'output-log';
+            const prefix = step.level === 'error' ? '✗ ' : step.level === 'warn' ? '⚠ ' : '› ';
+            outputContent.innerHTML += `<div class="${cls}">${prefix}${escapeHtml(step.value)}</div>`;
+            if (statusEl) statusEl.textContent = `Console: Log "${step.value}"`;
+            break;
+          case 'phase':
+            if (statusEl) statusEl.textContent = `Event Loop Phase: ${step.value.toUpperCase()}`;
+            if (phaseTimers) {
+              phaseTimers.style.background = step.value === 'timers' ? 'rgba(104,160,99,0.2)' : 'transparent';
+              phaseTimers.style.color = step.value === 'timers' ? 'var(--node-green)' : 'var(--text-muted)';
+            }
+            if (phasePoll) {
+              phasePoll.style.background = step.value === 'poll' ? 'rgba(104,160,99,0.2)' : 'transparent';
+              phasePoll.style.color = step.value === 'poll' ? 'var(--node-green)' : 'var(--text-muted)';
+            }
+            if (phaseCheck) {
+              phaseCheck.style.background = step.value === 'check' ? 'rgba(104,160,99,0.2)' : 'transparent';
+              phaseCheck.style.color = step.value === 'check' ? 'var(--node-green)' : 'var(--text-muted)';
+            }
+            break;
+        }
+
+        if (stackEl) {
+          stackEl.innerHTML = callStack.map(s => `
+            <div style="background: rgba(104, 160, 99, 0.1); border: 1px solid rgba(104, 160, 99, 0.3); color: var(--node-green); padding: 4px 8px; border-radius: 4px; font-weight: bold; animation: stackIn 0.2s ease;">${escapeHtml(s)}</div>
+          `).join('');
+        }
+
+        if (microEl) {
+          microEl.innerHTML = microtasks.map(m => `
+            <div style="background: rgba(167, 139, 250, 0.1); border: 1px solid rgba(167, 139, 250, 0.3); color: #c084fc; padding: 4px 8px; border-radius: 4px; font-weight: bold;">${escapeHtml(m)}</div>
+          `).join('');
+        }
+
+        if (macroEl) {
+          macroEl.innerHTML = macrotasks.map(m => `
+            <div style="background: rgba(96, 165, 250, 0.1); border: 1px solid rgba(96, 165, 250, 0.3); color: #60a5fa; padding: 4px 8px; border-radius: 4px; font-weight: bold;">${escapeHtml(m)}</div>
+          `).join('');
+        }
+      }
+
+      currentStep++;
+    }, 550);
+  }
+
   function escapeHtml(text) {
     return text.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
   }
@@ -421,7 +704,6 @@
       const code = codeEditor.value.trim();
       if (!code) return;
 
-      outputContent.innerHTML = '<span style="color:#8b949e">⏳ Running…</span>';
       // Automatically switch to console view on mobile
       if (window.innerWidth <= 480) {
         document.body.classList.add('show-console-only');
@@ -429,18 +711,27 @@
         if (btnShowCode) btnShowCode.classList.remove('active');
       }
 
-      setTimeout(() => {
-        const logs = simulateRun(code);
-        if (logs.length === 0) {
-          outputContent.innerHTML = '<span style="color:#8b949e;font-style:italic">No output produced.</span>';
-          return;
-        }
-        outputContent.innerHTML = logs.map(l => {
-          const cls = l.type === 'error' ? 'output-error' : l.type === 'warn' ? 'output-warn' : 'output-log';
-          const prefix = l.type === 'error' ? '✗ ' : l.type === 'warn' ? '⚠ ' : '› ';
-          return `<div class="${cls}">${prefix}${escapeHtml(l.text)}</div>`;
-        }).join('');
-      }, 200);
+      // Check if this is event loop / async code
+      const isEventLoopCode = /\b(setTimeout|Promise|setImmediate|process\.nextTick)\b/.test(code);
+
+      if (isEventLoopCode) {
+        runWithVisualizer(code);
+      } else {
+        stopEventLoopVisualizer();
+        outputContent.innerHTML = '<span style="color:#8b949e">⏳ Running…</span>';
+        setTimeout(() => {
+          const logs = simulateRun(code);
+          if (logs.length === 0) {
+            outputContent.innerHTML = '<span style="color:#8b949e;font-style:italic">No output produced.</span>';
+            return;
+          }
+          outputContent.innerHTML = logs.map(l => {
+            const cls = l.type === 'error' ? 'output-error' : l.type === 'warn' ? 'output-warn' : 'output-log';
+            const prefix = l.type === 'error' ? '✗ ' : l.type === 'warn' ? '⚠ ' : '› ';
+            return `<div class="${cls}">${prefix}${escapeHtml(l.text || l.value)}</div>`;
+          }).join('');
+        }, 200);
+      }
     });
   }
 
@@ -487,12 +778,14 @@
   if (clearCodeBtn) {
     clearCodeBtn.addEventListener('click', () => {
       if (codeEditor) codeEditor.value = '';
+      stopEventLoopVisualizer();
     });
   }
 
   if (clearOutBtn) {
     clearOutBtn.addEventListener('click', () => {
       if (outputContent) outputContent.innerHTML = '<span class="output-placeholder">Run code to see output here...</span>';
+      stopEventLoopVisualizer();
     });
   }
 
