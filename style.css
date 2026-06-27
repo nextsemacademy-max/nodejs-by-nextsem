@@ -4208,4 +4208,27 @@ body.sv .lbn {
   padding-bottom: calc(0.75rem + env(safe-area-inset-bottom, 0px)) !important;
 }
 
+#detail-terminal {
+  background-color: #060913 !important;
+  border: none !important;
+  border-top: 1px solid rgba(104, 160, 99, 0.3) !important;
+  border-radius: 0 0 var(--radius-sm) var(--radius-sm) !important;
+  margin: 0 !important;
+  padding: 12px 14px !important;
+  box-shadow: none !important;
+  max-height: 180px;
+  overflow-y: auto;
+  scroll-behavior: smooth;
+  box-sizing: border-box;
+}
+
+#detail-terminal:not(.active) {
+  display: none !important;
+}
+
+#detail-terminal.active {
+  display: block !important;
+  animation: fadeInTerminal 0.25s ease-out;
+}
+
 

@@ -1354,19 +1354,19 @@ trackFilters.forEach(btn => {
         <p>${lesson.theory}</p>
         <ul>${lesson.points.map(p => `<li>${p}</li>`).join('')}</ul>
       </div>
-      <div class="lcs">
+      <div class="lcs" style="overflow: hidden;">
         <div class="lch">
           <span>${lesson.filename}</span>
           <button class="bcopy" id="bcopy-btn">Copy</button>
         </div>
         <textarea class="sc-code-textarea" id="detail-code-textarea" style="background: #0d1117; color: #e6edf3; border: none; padding: 12px; font-family: var(--font-mono); font-size: 0.8rem; line-height: 1.5; resize: none; width: 100%; outline: none; box-sizing: border-box; display: block;" spellcheck="false">${lesson.code.replace(/<[^>]+>/g, '')}</textarea>
-        <div style="padding: 10px; border-top: 1px solid rgba(255,255,255,0.05); display: flex; gap: 8px;">
+        <div class="detail-editor-actions" style="padding: 10px; border-top: 1px solid rgba(255,255,255,0.05); display: flex; gap: 8px; background: rgba(255,255,255,0.01);">
           <button class="run-btn" id="detail-run-btn" style="background: linear-gradient(135deg, var(--node-green), var(--node-green-light)); color: white; border: none; padding: 8px 14px; border-radius: 6px; font-weight: 700; cursor: pointer; display: flex; align-items: center; gap: 6px; font-size: 0.78rem;">
             <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="margin-bottom:-1px;"><polygon points="5 3 19 12 5 21 5 3"/></svg>
             <span>Run Application</span>
           </button>
         </div>
-        <div class="terminal-box" id="detail-terminal" style="margin: 0 10px 10px; display: none;"></div>
+        <div class="terminal-box" id="detail-terminal"></div>
       </div>
       ${lesson.conceptImage ? `
       <div class="lcs-concept-diagram" style="border-top: 1px solid var(--border);">
