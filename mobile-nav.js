@@ -31,16 +31,23 @@
     banner.className = 'pwa-install-banner';
     banner.id = 'custom-pwa-banner';
     banner.innerHTML = `
-      <div class="pwa-banner-header">
-        <div class="pwa-banner-icon">📲</div>
-        <div class="pwa-banner-title">
-          <h4>Install NextSem App</h4>
-          <p>Learn offline, use in full-screen mode!</p>
+      <div class="pwa-banner-header" style="display: flex; align-items: flex-start; gap: 0.85rem;">
+        <div class="pwa-banner-icon" style="font-size: 1.6rem; background: linear-gradient(135deg, var(--node-green), #3b82f6); width: 44px; height: 44px; border-radius: 10px; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 12px rgba(104,160,99,0.3); flex-shrink:0;">📲</div>
+        <div class="pwa-banner-title" style="display:flex; flex-direction:column; gap:0.2rem;">
+          <h4 style="margin: 0; font-family: var(--font-heading); font-size: 0.95rem; font-weight: 800; color:#fff; letter-spacing:0.02em;">Install NextSem App</h4>
+          <p style="margin: 0; font-size: 0.76rem; color: var(--text-muted); line-height: 1.4;">Add to home screen for full-screen focus and fast offline access.</p>
         </div>
       </div>
-      <div class="pwa-banner-actions">
-        <button class="pwa-btn-dismiss" id="pwa-banner-btn-dismiss">Later</button>
-        <button class="pwa-btn-install" id="pwa-banner-btn-install">Install</button>
+      <div style="margin-top: 0.2rem; border-top: 1px solid rgba(255,255,255,0.05); padding-top: 0.6rem;">
+        <ul style="margin: 0; padding: 0 0 0 1rem; font-size: 0.72rem; color: var(--text-secondary); display: flex; flex-direction: column; gap: 0.35rem; list-style-type: '✓';">
+          <li style="padding-left: 0.3rem;"> Runs in full screen without browser controls</li>
+          <li style="padding-left: 0.3rem;"> Learn Node.js lessons even offline</li>
+          <li style="padding-left: 0.3rem;"> Fully responsive native mobile experience</li>
+        </ul>
+      </div>
+      <div class="pwa-banner-actions" style="margin-top: 0.4rem; display: flex; justify-content: flex-end; gap: 0.6rem; border-top: none; padding-top: 0;">
+        <button class="pwa-btn-dismiss" id="pwa-banner-btn-dismiss" style="background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.06); color: var(--text-secondary); border-radius: 6px; padding: 0.4rem 0.8rem; font-size: 0.75rem; font-weight: 700; cursor: pointer; transition: all 0.2s;">Later</button>
+        <button class="pwa-btn-install" id="pwa-banner-btn-install" style="background: var(--node-green); border: 1px solid var(--node-green); color: white; border-radius: 6px; padding: 0.4rem 0.9rem; font-size: 0.75rem; font-weight: 700; cursor: pointer; transition: all 0.2s; box-shadow: 0 4px 10px rgba(104,160,99,0.2);">Install</button>
       </div>
     `;
 
@@ -1310,4 +1317,83 @@
     if (mContainer) mContainer.innerHTML = html;
   }
   window.syncBadgesContent = syncBadgesContent;
+
+  // Offline / Online Status Banner Handler
+  window.addEventListener('offline', showOfflineBanner);
+  window.addEventListener('online', showOnlineBanner);
+
+  if (typeof navigator !== 'undefined' && !navigator.onLine) {
+    setTimeout(showOfflineBanner, 1000);
+  }
+
+  function showOfflineBanner() {
+    if (document.getElementById('offline-sync-banner')) {
+      document.getElementById('offline-sync-banner').remove();
+    }
+
+    const offlineBanner = document.createElement('div');
+    offlineBanner.id = 'offline-sync-banner';
+    offlineBanner.style.cssText = `
+      position: fixed;
+      bottom: 24px;
+      left: 50%;
+      transform: translateX(-50%) translateY(100px);
+      background: rgba(30, 41, 59, 0.96);
+      border: 1px solid rgba(248, 113, 113, 0.35);
+      color: #f87171;
+      padding: 10px 22px;
+      border-radius: 30px;
+      font-size: 0.78rem;
+      font-weight: 700;
+      font-family: system-ui, -apple-system, sans-serif;
+      z-index: 999999;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+      transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+    `;
+    offlineBanner.innerHTML = `
+      <span style="font-size: 1.1rem; animation: pulseRed 1.5s infinite;">📴</span>
+      <span>Offline Mode: Cached lessons loaded. Playground works offline.</span>
+    `;
+    
+    const style = document.createElement('style');
+    style.id = 'offline-banner-style';
+    style.innerHTML = `
+      @keyframes pulseRed {
+        0%, 100% { opacity: 1; }
+        50% { opacity: 0.4; }
+      }
+    `;
+    document.head.appendChild(style);
+    document.body.appendChild(offlineBanner);
+
+    setTimeout(() => {
+      offlineBanner.style.transform = 'translateX(-50%) translateY(0)';
+    }, 100);
+  }
+
+  function showOnlineBanner() {
+    const banner = document.getElementById('offline-sync-banner');
+    if (banner) {
+      banner.style.color = '#34d399';
+      banner.style.borderColor = 'rgba(52, 211, 153, 0.35)';
+      banner.innerHTML = `
+        <span style="font-size: 1.1rem;">💚</span>
+        <span>Connected! Syncing progress...</span>
+      `;
+      
+      setTimeout(() => {
+        banner.style.transform = 'translateX(-50%) translateY(100px)';
+        setTimeout(() => {
+          banner.remove();
+          const style = document.getElementById('offline-banner-style');
+          if (style) style.remove();
+        }, 400);
+      }, 2500);
+    }
+  }
 })();
