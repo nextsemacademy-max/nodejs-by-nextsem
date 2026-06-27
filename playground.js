@@ -355,6 +355,36 @@
         }
       };
     }
+    if (mod === 'fs') {
+      return {
+        readFile: (path, encoding, cb) => {
+          const callback = typeof encoding === 'function' ? encoding : cb;
+          setTimeout(() => callback(null, 'Recipe: 1. Require fs, 2. Call readFile'), 100);
+        },
+        readFileSync: (path) => 'Recipe: 1. Require fs, 2. Call readFile',
+        writeFile: (path, data, cb) => {
+          setTimeout(() => cb(null), 100);
+        },
+        writeFileSync: (path, data) => {}
+      };
+    }
+    if (mod === 'os') {
+      return {
+        platform: () => 'win32',
+        arch: () => 'x64',
+        cpus: () => [ { model: 'Intel Core i9', speed: 3600 } ],
+        totalmem: () => 17179869184,
+        freemem: () => 8589934592
+      };
+    }
+    if (mod === 'path') {
+      return {
+        join: (...args) => args.join('/'),
+        resolve: (...args) => '/' + args.join('/'),
+        basename: (p) => p.split('/').pop(),
+        extname: (p) => '.' + p.split('.').pop()
+      };
+    }
     throw new Error(`Module "${mod}" is not supported in this browser simulator.`);
   };
 

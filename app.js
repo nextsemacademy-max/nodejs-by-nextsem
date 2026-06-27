@@ -442,7 +442,8 @@ trackFilters.forEach(btn => {
 
     // Code preview snippet
     const rawSnippet = lessonCodeSnippets[lesson.id] || '';
-    const highlightedSnippet = highlightCode(rawSnippet);
+    const snippetLines = rawSnippet.split('\n').length;
+    const textareaHeight = Math.max(80, Math.min(220, snippetLines * 18 + 18));
 
     return `
       <div class="card">
@@ -457,8 +458,8 @@ trackFilters.forEach(btn => {
         <p class="sc-theory">${lesson.theory}</p>
         
         <div class="sc-code-block" style="margin-top: 4px;">
-          <div class="sc-code-label">CODE PREVIEW</div>
-          <div class="code-block" style="padding: 12px; margin: 0; border: none; font-size: 0.8rem;">${highlightedSnippet}</div>
+          <div class="sc-code-label">EDITABLE CODE</div>
+          <textarea class="sc-code-textarea" id="code-textarea-${pos}" style="background: #0d1117; color: #e6edf3; border: none; padding: 12px; font-family: var(--font-mono); font-size: 0.8rem; line-height: 1.5; resize: none; height: ${textareaHeight}px; width: 100%; outline: none; box-sizing: border-box; display: block;" spellcheck="false">${rawSnippet}</textarea>
         </div>
 
         <div style="display: flex; gap: 8px; margin-top: 4px; flex-wrap: wrap;">
@@ -517,6 +518,10 @@ trackFilters.forEach(btn => {
 
   function setupSwipeGestures() {
     track.addEventListener('touchstart', (e) => {
+      if (e.target.closest('textarea') || e.target.closest('input') || e.target.closest('button') || e.target.closest('a')) {
+        isDragging = false;
+        return;
+      }
       startY = e.touches[0].clientY;
       currentY = startY; // Initialize currentY to prevent jump on tap
       isDragging = true;
@@ -626,50 +631,43 @@ trackFilters.forEach(btn => {
     term.classList.add('active');
     btn.innerHTML = `<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="margin-bottom:-1px;"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/></svg><span>Stop</span>`;
 
-    // Simulated terminal execution outputs mapping
-    const outputs = {
-      'hello-world': [
-        `$ node app.js`,
-        `Hello, World!`,
-        `v24.16.0`,
-        `✔ Execution finished successfully!`
-      ],
-      'modules': [
-        `$ node index.js`,
-        `[info] Importing custom greeter module...`,
-        `Hello, NextSem Student!`,
-        `✔ Custom module export successfully loaded!`
-      ],
-      'fs': [
-        `$ node file-read.js`,
-        `[info] Reading system file: recipe.txt...`,
-        `File Content: "1. Require fs, 2. Call readFile"`,
-        `✔ File read successfully!`
-      ],
-      'async': [
-        `$ node async.js`,
-        `[info] Dispatching asynchronous timer tasks...`,
-        `[async] Timer task completed in 100ms`,
-        `✔ Asynchronous loop complete!`
-      ],
-      'http': [
-        `$ node server.js`,
-        `[info] Creating HTTP Server...`,
-        `✔ Web server listening on http://localhost:3000/`,
-        `[network] 127.0.0.1 - GET / - 200 OK`
-      ]
-    };
+    // Retrieve user custom code
+    const textarea = document.getElementById(`code-textarea-${pos}`);
+    const code = textarea ? textarea.value.trim() : '';
 
-    // Fallback default output for modular scaling
-    const defaultOutput = [
-      `$ node execution.js`,
-      `[info] Initializing execution context for ${lessonId}...`,
-      `[info] Checking package dependencies...`,
-      `✔ Execution finished successfully!`
-    ];
-
-    const lines = outputs[lessonId] || defaultOutput;
     term.innerHTML = '';
+    const initialLine = document.createElement('div');
+    initialLine.style.marginBottom = '4px';
+    initialLine.style.color = '#ffffff';
+    initialLine.style.fontWeight = 'bold';
+    initialLine.textContent = `$ node app.js`;
+    term.appendChild(initialLine);
+
+    if (!code) {
+      const emptyLine = document.createElement('div');
+      emptyLine.style.color = '#f87171';
+      emptyLine.textContent = `✗ Error: Code is empty`;
+      term.appendChild(emptyLine);
+      return;
+    }
+
+    // Run the compiler sandbox engine
+    const logs = simulateRun(code);
+    
+    // Prepare all console output lines
+    const lines = logs.map(l => {
+      return {
+        type: l.type,
+        text: (l.type === 'error' ? '✗ ' : l.type === 'warn' ? '⚠ ' : '› ') + l.text
+      };
+    });
+
+    const hasError = logs.some(l => l.type === 'error');
+    lines.push({
+      type: hasError ? 'error' : 'success',
+      text: hasError ? '✗ Execution failed.' : '✔ Execution finished successfully!'
+    });
+
     let currentLine = 0;
 
     function printNext() {
@@ -677,32 +675,37 @@ trackFilters.forEach(btn => {
         terminalTimers[pos] = null;
         return;
       }
+      
+      const item = lines[currentLine];
       const lineDiv = document.createElement('div');
       lineDiv.style.marginBottom = '4px';
-      lineDiv.textContent = lines[currentLine];
+      lineDiv.textContent = item.text;
 
-      if (lines[currentLine].startsWith('$')) {
-        lineDiv.style.color = '#ffffff';
-        lineDiv.style.fontWeight = 'bold';
-      } else if (lines[currentLine].startsWith('✔')) {
+      if (item.type === 'error') {
+        lineDiv.style.color = '#f87171';
+      } else if (item.type === 'warn') {
+        lineDiv.style.color = '#fbbf24';
+      } else if (item.type === 'success') {
         lineDiv.style.color = '#34d399';
         
         // Completion Action: Mark lesson complete upon success!
-        const item = _swipeItems[pos];
-        if (item && !completedIds.includes(item.lesson.id)) {
-          markDone(item.lesson.id);
+        const swipeItem = _swipeItems[pos];
+        if (swipeItem && !completedIds.includes(swipeItem.lesson.id)) {
+          markDone(swipeItem.lesson.id);
           if (typeof triggerConfetti === 'function') {
             triggerConfetti();
           }
           // Sync with Firebase
           if (typeof firebase !== 'undefined' && firebase.auth().currentUser && typeof window.markModuleDone === 'function') {
-            window.markModuleDone(item.index);
+            window.markModuleDone(swipeItem.index);
           }
           // Rerender badges
           setTimeout(renderSlides, 800);
         }
-      } else if (lines[currentLine].startsWith('[network]') || lines[currentLine].startsWith('[async]')) {
-        lineDiv.style.color = '#60a5fa';
+      } else {
+        if (item.text.includes('[network]') || item.text.includes('[async]')) {
+          lineDiv.style.color = '#60a5fa';
+        }
       }
 
       term.appendChild(lineDiv);
@@ -713,10 +716,10 @@ trackFilters.forEach(btn => {
         card.scrollTop = card.scrollHeight;
       }
 
-      terminalTimers[pos] = setTimeout(printNext, 400);
+      terminalTimers[pos] = setTimeout(printNext, 200); // Snappy 200ms delay per line
     }
 
-    printNext();
+    terminalTimers[pos] = setTimeout(printNext, 300);
   }
 
   function updateProgressBanner() {
@@ -1637,6 +1640,36 @@ const fakeRequire = (mod) => {
           }
         };
       }
+    };
+  }
+  if (mod === 'fs') {
+    return {
+      readFile: (path, encoding, cb) => {
+        const callback = typeof encoding === 'function' ? encoding : cb;
+        setTimeout(() => callback(null, 'Recipe: 1. Require fs, 2. Call readFile'), 100);
+      },
+      readFileSync: (path) => 'Recipe: 1. Require fs, 2. Call readFile',
+      writeFile: (path, data, cb) => {
+        setTimeout(() => cb(null), 100);
+      },
+      writeFileSync: (path, data) => {}
+    };
+  }
+  if (mod === 'os') {
+    return {
+      platform: () => 'win32',
+      arch: () => 'x64',
+      cpus: () => [ { model: 'Intel Core i9', speed: 3600 } ],
+      totalmem: () => 17179869184,
+      freemem: () => 8589934592
+    };
+  }
+  if (mod === 'path') {
+    return {
+      join: (...args) => args.join('/'),
+      resolve: (...args) => '/' + args.join('/'),
+      basename: (p) => p.split('/').pop(),
+      extname: (p) => '.' + p.split('.').pop()
     };
   }
   throw new Error(`Module "${mod}" is not supported in this browser environment.`);
