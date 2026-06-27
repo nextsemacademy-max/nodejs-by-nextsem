@@ -1248,10 +1248,7 @@ trackFilters.forEach(btn => {
       term.appendChild(lineDiv);
       currentLine++;
 
-      const mainCol = document.getElementById('lesson-detail-main-col');
-      if (mainCol) {
-        mainCol.scrollTop = mainCol.scrollHeight;
-      }
+      term.scrollTop = term.scrollHeight;
 
       terminalTimers[timerKey] = setTimeout(printNext, 200);
     }
