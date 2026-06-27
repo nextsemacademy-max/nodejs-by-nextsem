@@ -303,7 +303,9 @@
     <div id="view-list">
       <!-- Track filter tab strip -->
       <div class="scroll-hint-wrapper">
-        <div class="scroll-hint-arrow-left">←</div>
+        <button class="scroll-hint-arrow-left" onclick="this.nextElementSibling.scrollBy({ left: -140, behavior: 'smooth' })" aria-label="Scroll left">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" width="14" height="14"><polyline points="15 18 9 12 15 6"/></svg>
+        </button>
         <div class="track-filter-strip" id="track-filter-strip">
           <button class="tft active" data-filter="all">🌐 All</button>
           <button class="tft" data-filter="core">🌱 Core</button>
@@ -311,7 +313,9 @@
           <button class="tft" data-filter="db-auth">🗄️ DB & Auth</button>
           <button class="tft" data-filter="devops-test">🧪 Testing</button>
         </div>
-        <div class="scroll-hint-arrow-right">→</div>
+        <button class="scroll-hint-arrow-right" onclick="this.previousElementSibling.scrollBy({ left: 140, behavior: 'smooth' })" aria-label="Scroll right">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" width="14" height="14"><polyline points="9 18 15 12 9 6"/></svg>
+        </button>
       </div>
       <!-- Progress header -->
       <div class="lh">

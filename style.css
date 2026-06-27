@@ -4116,58 +4116,55 @@ body.light-mode .mini-sandbox .mini-console {
   position: absolute;
   top: 0;
   height: 100%;
-  width: 48px;
+  width: 44px;
   display: flex;
   align-items: center;
-  color: rgba(255, 255, 255, 0.45);
-  font-size: 1.15rem;
-  font-weight: 700;
-  pointer-events: none;
+  color: rgba(255, 255, 255, 0.4);
+  pointer-events: auto;
+  cursor: pointer;
+  border: none;
+  outline: none;
   z-index: 100;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
 }
 .scroll-hint-arrow-left {
   left: 0;
-  background: linear-gradient(to right, var(--bg-dark) 45%, rgba(10, 14, 19, 0));
+  background: linear-gradient(to right, var(--bg-dark) 45%, transparent);
   justify-content: flex-start;
   padding-left: 8px;
-  animation: pulseArrowLeftHint 1.8s infinite ease-in-out;
 }
 .scroll-hint-arrow-right {
   right: 0;
-  background: linear-gradient(to left, var(--bg-dark) 45%, rgba(10, 14, 19, 0));
+  background: linear-gradient(to left, var(--bg-dark) 45%, transparent);
   justify-content: flex-end;
   padding-right: 8px;
-  animation: pulseArrowRightHint 1.8s infinite ease-in-out;
+}
+.scroll-hint-arrow-left:hover {
+  color: var(--node-green-light);
+  transform: translateX(-2px);
+  background: linear-gradient(to right, var(--bg-dark) 60%, transparent);
+}
+.scroll-hint-arrow-right:hover {
+  color: var(--node-green-light);
+  transform: translateX(2px);
+  background: linear-gradient(to left, var(--bg-dark) 60%, transparent);
 }
 
 body.light-mode .scroll-hint-arrow-left {
-  background: linear-gradient(to right, #ffffff 45%, rgba(255, 255, 255, 0));
+  background: linear-gradient(to right, #ffffff 45%, transparent);
   color: rgba(0, 0, 0, 0.35);
 }
 body.light-mode .scroll-hint-arrow-right {
-  background: linear-gradient(to left, #ffffff 45%, rgba(255, 255, 255, 0));
+  background: linear-gradient(to left, #ffffff 45%, transparent);
   color: rgba(0, 0, 0, 0.35);
 }
-
-@keyframes pulseArrowLeftHint {
-  0%, 100% {
-    opacity: 0.3;
-    transform: translateX(0);
-  }
-  50% {
-    opacity: 0.9;
-    transform: translateX(-4px);
-  }
+body.light-mode .scroll-hint-arrow-left:hover {
+  background: linear-gradient(to right, #ffffff 60%, transparent);
+  color: var(--node-green);
 }
-@keyframes pulseArrowRightHint {
-  0%, 100% {
-    opacity: 0.3;
-    transform: translateX(0);
-  }
-  50% {
-    opacity: 0.9;
-    transform: translateX(4px);
-  }
+body.light-mode .scroll-hint-arrow-right:hover {
+  background: linear-gradient(to left, #ffffff 60%, transparent);
+  color: var(--node-green);
 }
 
 .s-tag-btn {

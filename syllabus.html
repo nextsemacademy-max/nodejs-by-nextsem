@@ -469,7 +469,9 @@
     <!-- Controls -->
     <div class="controls">
       <div class="scroll-hint-wrapper">
-        <div class="scroll-hint-arrow-left">←</div>
+        <button class="scroll-hint-arrow-left" onclick="this.nextElementSibling.scrollBy({ left: -150, behavior: 'smooth' })" aria-label="Scroll left">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" width="14" height="14"><polyline points="15 18 9 12 15 6"/></svg>
+        </button>
         <div class="tabs">
           <button class="tab-btn active" data-category="all" onclick="filterCategory('all')">All Modules</button>
           <button class="tab-btn" data-category="foundations" onclick="filterCategory('foundations')">Foundations</button>
@@ -477,7 +479,9 @@
           <button class="tab-btn" data-category="security" onclick="filterCategory('security')">Security & Production</button>
           <button class="tab-btn" data-category="advanced" onclick="filterCategory('advanced')">Advanced Architecture</button>
         </div>
-        <div class="scroll-hint-arrow-right">→</div>
+        <button class="scroll-hint-arrow-right" onclick="this.previousElementSibling.scrollBy({ left: 150, behavior: 'smooth' })" aria-label="Scroll right">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" width="14" height="14"><polyline points="9 18 15 12 9 6"/></svg>
+        </button>
       </div>
 
       <div class="search-wrapper">
