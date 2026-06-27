@@ -1,0 +1,24 @@
+{
+  "name": "NextSem – Node.js by NextSem",
+  "short_name": "NextSem",
+  "description": "An interactive platform to learn Node.js from scratch to advanced – with real code examples, exercises, and a structured curriculum.",
+  "start_url": "/?source=pwa",
+  "display": "standalone",
+  "background_color": "#0a0e13",
+  "theme_color": "#68a063",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "icon-192.png",
+      "type": "image/png",
+      "sizes": "192x192",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "icon-512.png",
+      "type": "image/png",
+      "sizes": "512x512",
+      "purpose": "any maskable"
+    }
+  ]
+}

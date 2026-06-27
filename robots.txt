@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://nodejs-by-nextsem.web.app/sitemap.xml

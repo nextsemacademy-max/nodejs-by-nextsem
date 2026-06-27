@@ -1,0 +1,442 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <!-- Google Search Console Verification -->
+  <meta name="google-site-verification" content="_OWB0JsK2RKq1DHn-XfFSnH8RAwbUnQw-ulZeLKy8p8" />
+  <title>Demystifying the Node.js Event Loop (With Visuals) – NextSem</title>
+  <meta name="description" content="An in-depth explanation of the Node.js Event Loop. Learn how timers, I/O polling, and microtasks (process.nextTick) work in Node's non-blocking model." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+  <!-- amp ads -->
+  <script async custom-element="amp-auto-ads" src="https://cdn.ampproject.org/v0/amp-auto-ads-0.1.js"></script>
+  <!-- end of amp ads -->
+  <!-- Google AdSense -->
+  <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-4242865347895866" crossorigin="anonymous"></script>
+  <!-- end of ads -->
+  <link rel="stylesheet" href="style.css?v=35" />
+  <style>
+    .article-container {
+      max-width: 800px;
+      margin: 0 auto;
+      padding: 120px 1.5rem 80px;
+    }
+    .back-link {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      color: var(--node-green-light);
+      text-decoration: none;
+      font-size: 0.9rem;
+      font-weight: 600;
+      margin-bottom: 2rem;
+      transition: var(--transition);
+    }
+    .back-link:hover {
+      transform: translateX(-3px);
+      color: var(--node-green);
+    }
+    
+    .article-header {
+      margin-bottom: 3rem;
+      border-bottom: 1px solid var(--border);
+      padding-bottom: 2rem;
+    }
+    .article-meta {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      font-size: 0.85rem;
+      color: var(--text-secondary);
+      margin-bottom: 1rem;
+    }
+    .article-tag {
+      background: rgba(104, 160, 99, 0.1);
+      border: 1px solid rgba(104, 160, 99, 0.2);
+      color: var(--node-green-light);
+      padding: 0.2rem 0.6rem;
+      border-radius: 4px;
+      font-weight: 600;
+    }
+    .article-title {
+      font-size: clamp(2rem, 5vw, 2.75rem);
+      line-height: 1.25;
+      font-weight: 900;
+      letter-spacing: -1px;
+      color: var(--text-primary);
+      margin-bottom: 1.25rem;
+    }
+    .article-author-row {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+    }
+    .article-avatar {
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      background: var(--node-green);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 700;
+      color: var(--bg-dark);
+    }
+    .article-author-info h4 {
+      font-size: 0.9rem;
+      font-weight: 600;
+      color: var(--text-primary);
+    }
+    .article-author-info p {
+      font-size: 0.78rem;
+      color: var(--text-muted);
+    }
+
+    /* Article Content styling */
+    .article-content {
+      font-size: 1.05rem;
+      line-height: 1.8;
+      color: var(--text-secondary);
+    }
+    .article-content h2 {
+      font-size: 1.75rem;
+      font-weight: 800;
+      color: var(--text-primary);
+      margin: 2.5rem 0 1rem;
+      letter-spacing: -0.5px;
+    }
+    .article-content h3 {
+      font-size: 1.3rem;
+      font-weight: 700;
+      color: var(--text-primary);
+      margin: 2rem 0 0.75rem;
+    }
+    .article-content p {
+      margin-bottom: 1.5rem;
+    }
+    .article-content ul, .article-content ol {
+      margin-bottom: 1.5rem;
+      padding-left: 1.5rem;
+    }
+    .article-content li {
+      margin-bottom: 0.5rem;
+    }
+    .article-content code {
+      font-family: var(--font-mono);
+      font-size: 0.9rem;
+      background: rgba(255,255,255,0.06);
+      padding: 0.2rem 0.4rem;
+      border-radius: 4px;
+      color: var(--text-primary);
+    }
+    .article-content pre {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-md);
+      padding: 1.25rem;
+      margin: 1.5rem 0;
+      overflow-x: auto;
+    }
+    .article-content pre code {
+      background: none;
+      padding: 0;
+      color: var(--text-primary);
+      font-size: 0.88rem;
+      line-height: 1.5;
+    }
+    
+    /* Callouts */
+    .article-callout {
+      background: rgba(104,160,99,0.05);
+      border-left: 4px solid var(--node-green);
+      padding: 1.25rem;
+      border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
+      margin: 1.75rem 0;
+    }
+    .article-callout p {
+      margin: 0;
+      font-size: 0.95rem;
+      color: var(--text-primary);
+    }
+    .article-callout-warning {
+      background: rgba(239, 68, 68, 0.05);
+      border-left: 4px solid #ef4444;
+    }
+    .article-callout-warning p {
+      color: var(--text-primary);
+    }
+
+    /* Diagram wrapper */
+    .diagram-box {
+      background: var(--bg-card2);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-md);
+      padding: 2rem;
+      margin: 2rem 0;
+      text-align: center;
+      font-family: var(--font-mono);
+      font-size: 0.82rem;
+      color: var(--node-green-light);
+      overflow-x: auto;
+      white-space: pre;
+      line-height: 1.4;
+    }
+
+    /* Ad slot inside article */
+    .article-ad {
+      margin: 2.5rem 0;
+    }
+  </style>
+  <!-- PWA & Android Meta Tags -->
+  <link rel="manifest" href="manifest.json" />
+  <meta name="mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="application-name" content="NextSem" />
+  <meta name="apple-mobile-web-app-title" content="NextSem" />
+  <meta name="theme-color" content="#0a0e13" />
+  <meta name="msapplication-navbutton-color" content="#0a0e13" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <link rel="icon" sizes="192x192" href="icon-192.png" />
+  <link rel="apple-touch-icon" href="icon-192.png" />
+</head>
+<body>
+  <!-- amp ads -->
+  <amp-auto-ads type="adsense" data-ad-client="ca-pub-4242865347895866"></amp-auto-ads>
+  <!-- end of amp ads -->
+
+  <!-- Navigation -->
+  <nav class="navbar" id="navbar">
+    <div class="nav-container">
+      <a href="index.html" class="nav-logo">
+        <svg class="logo-icon" viewBox="0 0 84 64" fill="none" stroke="currentColor" stroke-width="11" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M 16 52 L 16 26 C 16 17.5 22.5 11 30.5 11 C 38.5 11 45 17.5 45 26 L 45 42 C 45 48 49 53 56 53 C 63 53 67 48 67 42 C 67 36 63 32 56 32 C 49 32 45 28 45 22 C 45 16 49 11 56 11 C 63 11 67 16 67 22" />
+        </svg>
+        <span class="logo-text">Node.js by NextSem</span>
+      </a>
+      <ul class="nav-links" id="nav-links">
+        <li><a href="index.html#curriculum" class="nav-link">Curriculum</a></li>
+        <li><a href="lessons.html?v=32" class="nav-link">Lessons</a></li>
+        <li><a href="playground.html?v=32" class="nav-link">Playground</a></li>
+        <li class="mobile-only"><a href="blog.html" class="nav-link">Blog</a></li>
+        <li class="mobile-only"><a href="about.html" class="nav-link">About</a></li>
+        <li class="mobile-only"><a href="contact.html" class="nav-link">Contact Us</a></li>
+        <li class="mobile-only"><a href="privacy.html" class="nav-link">Privacy Policy</a></li>
+        <li class="mobile-actions">
+          <a href="contact.html"><button class="btn-start">Contact Us</button></a>
+        </li>
+      </ul>
+      <div class="nav-actions">
+        <a href="contact.html"><button class="btn-start">Contact Us</button></a>
+        <button class="hamburger" id="hamburger" aria-label="Toggle menu">
+          <span></span><span></span><span></span>
+        </button>
+      </div>
+    </div>
+  </nav>
+
+  <!-- Main Article Container -->
+  <article class="article-container">
+    <a href="blog.html" class="back-link">
+      <span>←</span> Back to Blog
+    </a>
+
+    <header class="article-header">
+      <div class="article-meta">
+        <span class="article-tag">Core Architecture</span>
+        <span>June 24, 2026</span>
+        <span>•</span>
+        <span>6 min read</span>
+      </div>
+      <h1 class="article-title">Demystifying the Node.js Event Loop (With Visuals)</h1>
+      <div class="article-author-row">
+        <div class="article-avatar">NP</div>
+        <div class="article-author-info">
+          <h4>NextSem Team</h4>
+          <p>Educational Content Creators</p>
+        </div>
+      </div>
+    </header>
+
+    <div class="article-content">
+      <p>Node.js is famous for being fast, scalable, and capable of handling thousands of concurrent connections on a single thread. But how is this possible? The magic lies in the <strong>Event Loop</strong>. In this guide, we'll peel back the layers and understand exactly how Node.js manages asynchronous operations under the hood.</p>
+
+      <h2>The Single-Threaded Myth</h2>
+      <p>You've likely heard that Node.js is "single-threaded." While this is true for the main execution thread (where your JavaScript code runs), Node.js uses a C++ library called <strong>libuv</strong> under the hood. Libuv provides a thread pool (typically 4 threads by default) to handle heavy, blocking operations like reading files, cryptographic operations, or database queries. This keeps your main thread free to handle fast incoming requests.</p>
+
+      <div class="article-callout">
+        <p><strong>💡 Key Concept:</strong> The Event Loop acts like a coordinator. It coordinates the execution of JavaScript callbacks on the main thread and delegates blocking tasks to libuv's thread pool or the operating system.</p>
+      </div>
+
+      <h2>The Phases of the Event Loop</h2>
+      <p>The event loop is a continuous loop that executes a series of phases in order. Let's look at the structure:</p>
+
+      <div class="diagram-box">
+┌───────────────────────────────────────────────┐
+│                 incoming                      │
+│                connections                    │
+└──────────────────────┬────────────────────────┘
+                       ▼
+         ┌───────────────────────────┐
+   ┌────►│          Timers           │ (setTimeout, setInterval)
+   │     └─────────────┬─────────────┘
+   │                   ▼
+   │     ┌───────────────────────────┐
+   │     │    Pending Callbacks      │ (Deferred system callbacks)
+   │     └─────────────┬─────────────┘
+   │                   ▼
+   │     ┌───────────────────────────┐
+   │     │      Idle, Prepare        │ (Internal library operations)
+   │     └─────────────┬─────────────┘
+   │                   ▼
+   │     ┌───────────────────────────┐
+   │     │           Poll            │ (Retrieve new I/O events)
+   │     └─────────────┬─────────────┘
+   │                   ▼
+   │     ┌───────────────────────────┐
+   │     │           Check           │ (setImmediate callbacks)
+   │     └─────────────┬─────────────┘
+   │                   ▼
+   │     ┌───────────────────────────┐
+   └─────┤      Close Callbacks      │ (socket.on('close'), etc.)
+         └───────────────────────────┘</div>
+
+      <p>Each phase has a FIFO (first-in-first-out) queue of callbacks to execute. When the event loop enters a given phase, it will perform any operations specific to that phase, then execute callbacks in that phase's queue until the queue is empty or the maximum callback limit is reached.</p>
+
+      <h3>1. Timers Phase</h3>
+      <p>This phase executes callbacks scheduled by <code>setTimeout()</code> and <code>setInterval()</code>. The event loop checks if any timers have expired, and if so, runs their callbacks. Note that the event loop cannot guarantee exact timing; it runs callbacks as close to the target delay as possible.</p>
+
+      <!-- In-Article Ad Slot -->
+      <div class="article-ad">
+        <div class="ad-slot ad-slot-rectangle" aria-label="Advertisement" style="margin: 0;">
+          <span class="ad-label">Advertisement</span>
+          <ins class="adsbygoogle"
+               style="display:block"
+               data-ad-client="ca-pub-4242865347895866"
+               data-ad-slot="2222222222"
+               data-ad-format="auto"
+               data-full-width-responsive="true"></ins>
+          <script>(adsbygoogle = window.adsbygoogle || []).push({});</script>
+        </div>
+      </div>
+
+      <h3>2. Pending Callbacks</h3>
+      <p>This phase executes system-level callbacks that were deferred from the previous loop iteration. For example, if a TCP socket attempts to connect and receives an <code>ECONNREFUSED</code> error, some *nix systems will defer reporting this error, queueing it here.</p>
+
+      <h3>3. Idle, Prepare</h3>
+      <p>This phase is used only internally by libuv for housekeeping and preparing the next phase. You will never write code that executes during this phase.</p>
+
+      <h3>4. Poll Phase</h3>
+      <p>This is the most critical phase. The poll phase has two main responsibilities:</p>
+      <ul>
+        <li>Calculating how long it should block and poll for new I/O events.</li>
+        <li>Processing events in the poll queue.</li>
+      </ul>
+      <p>If the poll queue is not empty, the loop iterates through the queue of callbacks, executing them synchronously until the queue is empty. If the queue is empty, the loop checks if any <code>setImmediate()</code> callbacks are scheduled. If they are, it ends the poll phase and enters the <strong>Check</strong> phase.</p>
+
+      <h3>5. Check Phase</h3>
+      <p>This phase is dedicated to running callbacks scheduled with <code>setImmediate()</code>. Think of <code>setImmediate()</code> as a special timer that runs immediately after the poll phase finishes.</p>
+
+      <h3>6. Close Callbacks Phase</h3>
+      <p>If a socket or handle is closed abruptly (e.g. <code>socket.destroy()</code>), the <code>'close'</code> event will be emitted in this phase.</p>
+
+      <h2>Microtasks: process.nextTick() &amp; Promises</h2>
+      <p>Where do <code>process.nextTick()</code> and Promise callbacks (<code>.then()</code>) fit into this? They are not actually part of the libuv event loop! Instead, they are handled by Node.js/V8 directly as **microtasks**.</p>
+      <p>Microtask queues are checked and drained **immediately after the current operation finishes**, regardless of the current phase of the event loop. In other words, if you call <code>process.nextTick()</code>, its callback will execute before the event loop continues to the next phase.</p>
+
+      <div class="article-callout article-callout-warning">
+        <p><strong>⚠️ Warning:</strong> Recursively calling <code>process.nextTick()</code> can starve the event loop! Because the event loop will wait for the microtask queue to drain, it will never transition to the next phase, causing your application to freeze (I/O starvation).</p>
+      </div>
+
+      <h2>Practical Example</h2>
+      <p>Let's look at a code snippet. Can you guess the output order?</p>
+
+      <pre><code>const fs = require('fs');
+
+console.log('1. Start');
+
+setTimeout(() => {
+  console.log('2. Timeout 0ms');
+}, 0);
+
+setImmediate(() => {
+  console.log('3. Immediate');
+});
+
+fs.readFile(__filename, () => {
+  setTimeout(() => {
+    console.log('4. Timeout in I/O callback');
+  }, 0);
+  setImmediate(() => {
+    console.log('5. Immediate in I/O callback');
+  });
+});
+
+process.nextTick(() => {
+  console.log('6. Next Tick');
+});
+
+console.log('7. End');</code></pre>
+
+      <h3>The Output Explained:</h3>
+      <ol>
+        <li><code>1. Start</code> and <code>7. End</code> are logged first because they are synchronous.</li>
+        <li><code>6. Next Tick</code> runs next. The synchronous code finishes, and Node drains the microtask queue before starting the event loop.</li>
+        <li><code>2. Timeout 0ms</code> or <code>3. Immediate</code> will run next. In the main thread execution, the ordering depends on the performance of the system (under 1ms, timers can be unstable).</li>
+        <li>Once the file is read, the event loop runs the file callback inside the **Poll** phase.</li>
+        <li>Inside the Poll phase, the loop schedules a timer (4) and an immediate (5). Because the loop immediately transitions to the **Check** phase after Poll, <code>5. Immediate in I/O callback</code> is guaranteed to execute before <code>4. Timeout in I/O callback</code>.</li>
+      </ol>
+
+      <h2>Summary</h2>
+      <p>Understanding the Event Loop helps you write non-blocking, high-performance Node.js code. By avoiding blocking operations on the main thread and properly structuring your callbacks, timers, and microtasks, you can build extremely scalable applications. Keep experimenting in the playground and write some asynchronous code to see these behaviors in action!</p>
+    </div>
+  </article>
+
+  <!-- Footer -->
+  <footer class="footer">
+    <div class="footer-container">
+      <div class="footer-brand">
+        <svg class="logo-icon" viewBox="0 0 84 64" fill="none" stroke="currentColor" stroke-width="11" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M 16 52 L 16 26 C 16 17.5 22.5 11 30.5 11 C 38.5 11 45 17.5 45 26 L 45 42 C 45 48 49 53 56 53 C 63 53 67 48 67 42 C 67 36 63 32 56 32 C 49 32 45 28 45 22 C 45 16 49 11 56 11 C 63 11 67 16 67 22" />
+        </svg>
+        <span class="logo-text">next sem</span>
+      </div>
+      <div class="footer-links">
+        <a href="index.html" class="footer-link">Home</a>
+        <a href="blog.html" class="footer-link">Blog</a>
+        <a href="privacy.html" class="footer-link">Privacy Policy</a>
+        <a href="contact.html" class="footer-link">Contact</a>
+      </div>
+      <p class="footer-text">Built with ❤️ to make Node.js learning accessible for everyone.</p>
+      <p class="footer-copy">© 2026 NextSem · Free &amp; Open Source</p>
+    </div>
+  </footer>
+
+  <script>
+    const navbar = document.getElementById('navbar');
+    window.addEventListener('scroll', () => {
+      navbar.classList.toggle('scrolled', window.scrollY > 30);
+    });
+
+    // Hamburger menu toggle
+    const hamburger = document.getElementById('hamburger');
+    const navLinks = document.getElementById('nav-links');
+    if (hamburger && navLinks) {
+      hamburger.addEventListener('click', () => {
+        navLinks.classList.toggle('active');
+        hamburger.classList.toggle('active');
+      });
+
+      // Close mobile menu when clicking links or buttons inside dropdown
+      document.querySelectorAll('.nav-link, .nav-links .btn-start').forEach(el => {
+        el.addEventListener('click', () => {
+          navLinks.classList.remove('active');
+          hamburger.classList.remove('active');
+        });
+      });
+    }
+  </script>
+  <script src="mobile-nav.js?v=35"></script>
+</body>
+</html>

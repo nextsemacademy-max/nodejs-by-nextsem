@@ -1,0 +1,726 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>1000-Page Swiper Prototype - NextSem Staging</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  
+  <style>
+    :root {
+      --bg-color: #0b0f19;
+      --card-bg: #151d30;
+      --primary: #10b981;
+      --primary-hover: #059669;
+      --text: #f3f4f6;
+      --text-muted: #9ca3af;
+      --border: #1f2937;
+      --header-bg: #111827;
+      --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      --font-mono: 'JetBrains Mono', monospace;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    body {
+      background-color: var(--bg-color);
+      color: var(--text);
+      font-family: var(--font-sans);
+      height: 100vh;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* --- Prototype Header --- */
+    .proto-header {
+      background-color: var(--header-bg);
+      border-bottom: 1px solid var(--border);
+      padding: 12px 20px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      z-index: 100;
+      flex-shrink: 0;
+    }
+
+    .proto-title {
+      font-size: 1.1rem;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .proto-badge {
+      background-color: rgba(16, 185, 129, 0.15);
+      color: var(--primary);
+      border: 1px solid rgba(16, 185, 129, 0.3);
+      font-size: 0.75rem;
+      font-weight: 600;
+      padding: 2px 8px;
+      border-radius: 9999px;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    .back-btn {
+      color: var(--text-muted);
+      text-decoration: none;
+      font-size: 0.85rem;
+      font-weight: 500;
+      transition: color 0.2s;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .back-btn:hover {
+      color: var(--text);
+    }
+
+    /* --- Slider Container --- */
+    .slider-viewport {
+      flex: 1;
+      width: 100%;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .slider-track {
+      display: flex;
+      flex-direction: column;
+      width: 100%;
+      height: 300%;
+      position: absolute;
+      top: -100%;
+      left: 0;
+      transform: translate3d(0, 0, 0);
+      will-change: transform;
+    }
+
+    .slide {
+      width: 100%;
+      height: 33.33333%;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      padding: 16px;
+      overflow-y: auto;
+      touch-action: pan-x; /* Crucial: lets horizontal gestures pass, blocks native vertical scroll in track */
+    }
+
+    /* --- Learning Card UI --- */
+    .card {
+      background-color: var(--card-bg);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      width: 100%;
+      max-width: 650px;
+      max-height: 90%;
+      padding: 24px;
+      box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.3);
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+      overflow-y: auto;
+    }
+
+    .card-meta {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .card-index {
+      font-size: 0.8rem;
+      color: var(--primary);
+      font-weight: 600;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+    }
+
+    .progress-bar-bg {
+      width: 100%;
+      height: 4px;
+      background-color: rgba(255, 255, 255, 0.05);
+      border-radius: 99px;
+      overflow: hidden;
+      margin-top: 6px;
+    }
+
+    .progress-bar-fill {
+      height: 100%;
+      background-color: var(--primary);
+      width: 0%;
+      transition: width 0.3s;
+    }
+
+    .card-title {
+      font-size: 1.5rem;
+      font-weight: 800;
+      line-height: 1.25;
+      color: var(--text);
+    }
+
+    .card-description {
+      font-size: 0.95rem;
+      color: var(--text-muted);
+      line-height: 1.6;
+    }
+
+    /* --- Code Block --- */
+    .code-block {
+      background-color: rgba(0, 0, 0, 0.25);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 16px;
+      font-family: var(--font-mono);
+      font-size: 0.85rem;
+      line-height: 1.5;
+      overflow-x: hidden;
+      white-space: pre-wrap;
+      word-wrap: break-word;
+      word-break: break-word;
+    }
+
+    .run-btn {
+      background: linear-gradient(135deg, var(--primary), var(--primary-hover));
+      color: white;
+      border: none;
+      padding: 8px 14px;
+      border-radius: 6px;
+      font-weight: 700;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 0.78rem;
+      margin-top: 12px;
+      transition: opacity 0.2s;
+      width: fit-content;
+    }
+    .run-btn:hover {
+      opacity: 0.9;
+    }
+    .terminal-box {
+      background-color: #060913;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 12px;
+      font-family: var(--font-mono);
+      font-size: 0.78rem;
+      color: var(--primary);
+      margin-top: 10px;
+      line-height: 1.5;
+      display: none;
+      text-align: left;
+      width: 100%;
+    }
+    .terminal-box.active {
+      display: block;
+      border-color: rgba(16, 185, 129, 0.4);
+      box-shadow: 0 4px 12px rgba(16, 185, 129, 0.1);
+      animation: fadeInTerminal 0.25s ease-out;
+    }
+
+    @keyframes fadeInTerminal {
+      from { opacity: 0; transform: translateY(4px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    /* Style scrollbars for code blocks and cards */
+    .code-block::-webkit-scrollbar,
+    .card::-webkit-scrollbar {
+      height: 6px;
+      width: 6px;
+    }
+    .code-block::-webkit-scrollbar-track,
+    .card::-webkit-scrollbar-track {
+      background: rgba(0, 0, 0, 0.15);
+      border-radius: 99px;
+    }
+    .code-block::-webkit-scrollbar-thumb,
+    .card::-webkit-scrollbar-thumb {
+      background: rgba(255, 255, 255, 0.15);
+      border-radius: 99px;
+    }
+    .code-block::-webkit-scrollbar-thumb:hover,
+    .card::-webkit-scrollbar-thumb:hover {
+      background: rgba(255, 255, 255, 0.3);
+    }
+    
+    /* Firefox scrollbar compatibility */
+    .code-block, .card {
+      scrollbar-width: thin;
+      scrollbar-color: rgba(255, 255, 255, 0.15) rgba(0, 0, 0, 0.15);
+    }
+
+    .code-keyword { color: #f472b6; }
+    .code-func { color: #60a5fa; }
+    .code-string { color: #34d399; }
+    .code-comment { color: #6b7280; font-style: italic; }
+
+    /* --- Swipe Indicator / Instruction --- */
+    .instruction {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 8px;
+      color: var(--text-muted);
+      font-size: 0.8rem;
+      margin-top: 10px;
+    }
+
+    .instruction svg {
+      width: 16px;
+      height: 16px;
+      fill: currentColor;
+    }
+
+    /* --- Floating Footer Controls --- */
+    .proto-footer {
+      background-color: var(--header-bg);
+      border-top: 1px solid var(--border);
+      padding: 16px 20px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-shrink: 0;
+      z-index: 100;
+    }
+
+    .nav-btn {
+      background-color: var(--card-bg);
+      border: 1px solid var(--border);
+      color: var(--text);
+      font-size: 0.85rem;
+      font-weight: 600;
+      padding: 10px 16px;
+      border-radius: 8px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      transition: all 0.2s;
+    }
+
+    .nav-btn:hover:not(:disabled) {
+      border-color: var(--primary);
+      background-color: rgba(16, 185, 129, 0.05);
+    }
+
+    .nav-btn:disabled {
+      opacity: 0.4;
+      cursor: not-allowed;
+    }
+
+    .jump-box {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 0.85rem;
+      color: var(--text-muted);
+    }
+
+    .jump-input {
+      background-color: rgba(0, 0, 0, 0.25);
+      border: 1px solid var(--border);
+      color: var(--text);
+      width: 60px;
+      text-align: center;
+      padding: 6px;
+      border-radius: 6px;
+      font-weight: 600;
+      font-size: 0.85rem;
+      font-family: var(--font-mono);
+    }
+
+    .jump-input:focus {
+      border-color: var(--primary);
+      outline: none;
+    }
+
+    /* Desktop Hint */
+    @media (min-width: 768px) {
+      .instruction::after {
+        content: ' or use Left / Right arrow keys';
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Header -->
+  <header class="proto-header">
+    <div class="proto-title">
+      <span>NextSem</span>
+      <span class="proto-badge">1000 Swiper Demo</span>
+    </div>
+    <a href="lessons.html" class="back-btn">
+      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+      Back to Lessons
+    </a>
+  </header>
+
+  <!-- Slider Area -->
+  <main class="slider-viewport">
+    <div class="slider-track" id="slider-track">
+      <div class="slide" id="slide-left"></div>
+      <div class="slide" id="slide-center"></div>
+      <div class="slide" id="slide-right"></div>
+    </div>
+  </main>
+
+  <!-- Footer Navigation controls -->
+  <footer class="proto-footer">
+    <button class="nav-btn" id="btn-prev" disabled>
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M15 18l-6-6 6-6"/></svg>
+      Prev
+    </button>
+
+    <div class="jump-box">
+      <span>Page</span>
+      <input type="number" id="jump-input" class="jump-input" min="1" max="1000" value="1">
+      <span>/ 1000</span>
+    </div>
+
+    <button class="nav-btn" id="btn-next">
+      Next
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M9 18l6-6-6-6"/></svg>
+    </button>
+  </footer>
+
+  <script>
+    // 1000 Pages Algorithmic Content Generator
+    const concepts = [
+      { name: "HTTP Server Configuration", file: "http", pkg: "const http = require('http');" },
+      { name: "Asynchronous File Compression", file: "fs", pkg: "const zlib = require('zlib');" },
+      { name: "Multithreaded Cluster Forking", file: "cluster", pkg: "const cluster = require('cluster');" },
+      { name: "Streams Pipeline Buffer Piping", file: "stream", pkg: "const { pipeline } = require('stream');" },
+      { name: "Express Request Router Pipeline", file: "express", pkg: "const express = require('express');" },
+      { name: "Secure Password Hashing Lifecycle", file: "bcrypt", pkg: "const bcrypt = require('bcrypt');" },
+      { name: "JSON Web Token Validation Flow", file: "jsonwebtoken", pkg: "const jwt = require('jsonwebtoken');" },
+      { name: "Redis In-Memory Database Caching", file: "redis", pkg: "const Redis = require('ioredis');" },
+      { name: "MongoDB Cursor Query Filtering", file: "mongoose", pkg: "const mongoose = require('mongoose');" },
+      { name: "WebSocket Full Duplex Messaging", file: "socket.io", pkg: "const { Server } = require('socket.io');" },
+      { name: "Event Emitter Payload Listening", file: "events", pkg: "const EventEmitter = require('events');" },
+      { name: "Child Process Spawn Command Forking", file: "child_process", pkg: "const { spawn } = require('child_process');" },
+      { name: "OS Network Interface Parsing", file: "os", pkg: "const os = require('os');" },
+      { name: "Path Safe Directory Traversal", file: "path", pkg: "const path = require('path');" },
+      { name: "Helmet Headers Protection Setup", file: "helmet", pkg: "const helmet = require('helmet');" },
+      { name: "Multer DiskStorage Disk Uploading", file: "multer", pkg: "const multer = require('multer');" },
+      { name: "Jest Mocking Module Assertions", file: "jest", pkg: "const jest = require('jest');" },
+      { name: "GraphQL Schema Resolver Querying", file: "graphql", pkg: "const { graphql } = require('graphql');" },
+      { name: "HTTPS SSL Key Cert Initialization", file: "https", pkg: "const https = require('https');" },
+      { name: "Dotenv Secrets Config Registration", file: "dotenv", pkg: "require('dotenv').config();" }
+    ];
+
+    function getPageContent(index) {
+      if (index < 1 || index > 1000) return null;
+      
+      // Determine content algorithmically using prime modular indexes
+      const concept = concepts[(index - 1) % concepts.length];
+      const difficulty = index < 300 ? "Beginner" : index < 700 ? "Intermediate" : "Advanced";
+      const progressPercent = ((index / 1000) * 100).toFixed(1);
+      
+      let codeSnippet = '';
+      if (index % 2 === 0) {
+        codeSnippet = `<span class="code-comment">// Demo Snippet for Page ${index}</span>\n${concept.pkg}\n<span class="code-keyword">const</span> <span class="code-func">server</span> = http.<span class="code-func">createServer</span>((req, res) => {\n  console.<span class="code-func">log</span>(<span class="code-string">"Request received at page ${index}"</span>);\n  res.<span class="code-func">writeHead</span>(<span class="code-keyword">200</span>);\n  res.<span class="code-func">end</span>(<span class="code-string">"Hello Node.js Page ${index}"</span>);\n});\nserver.<span class="code-func">listen</span>(${3000 + index});`;
+      } else {
+        codeSnippet = `<span class="code-comment">// Pipeline execution module</span>\n${concept.pkg}\n<span class="code-keyword">const</span> <span class="code-func">source</span> = fs.<span class="code-func">createReadStream</span>(<span class="code-string">'input_${index}.txt'</span>);\n<span class="code-keyword">const</span> <span class="code-func">destination</span> = fs.<span class="code-func">createWriteStream</span>(<span class="code-string">'out_${index}.gz'</span>);\n<span class="code-func">pipeline</span>(source, zlib.<span class="code-func">createGzip</span>(), destination, (err) => {\n  <span class="code-keyword">if</span> (err) console.<span class="code-func">error</span>(<span class="code-string">"Failed pipeline index ${index}"</span>, err);\n});`;
+      }
+
+      return `
+        <div class="card">
+          <div class="card-meta">
+            <span class="card-index">Lesson Module ${index} of 1000</span>
+            <span class="proto-badge">${difficulty}</span>
+          </div>
+          <div>
+            <div class="card-title">Backend Architecture: ${concept.name} (Part ${Math.ceil(index / concepts.length)})</div>
+            <div class="progress-bar-bg">
+              <div class="progress-bar-fill" style="width: ${progressPercent}%"></div>
+            </div>
+          </div>
+          <p class="card-description">
+            Welcome to page <strong>${index}</strong> of the NextSem 1000-page infinite swipe demonstration. 
+            This dynamically loaded lesson card focuses on <strong>${concept.name}</strong>. In Node.js, managing resource execution flows securely 
+            is essential. The code block below represents target configuration #${index} for active backend routines.
+          </p>
+          <div class="code-block">${codeSnippet}</div>
+          
+          <!-- Run Application Trigger -->
+          <button class="run-btn" onclick="runApplication(${index}, this)">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="margin-bottom:-1px;"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+            <span>Run Application</span>
+          </button>
+          
+          <!-- Simulated Console Output Box -->
+          <div class="terminal-box" id="terminal-${index}"></div>
+          
+          <div class="instruction">
+            <svg viewBox="0 0 24 24" style="transform: rotate(90deg);"><path d="M10 9V5l-7 7 7 7v-4.1c5 0 8.5 1.6 11 5.1-1-5-4-10-11-11z"/></svg>
+            <span>Swipe up or down to slide page</span>
+          </div>
+        </div>
+      `;
+    }
+
+    // Simulated local execution engine
+    let terminalTimers = {};
+
+    function runApplication(index, btn) {
+      const term = document.getElementById(`terminal-${index}`);
+      if (!term) return;
+      
+      // If there's an active running timer for this index, clear it
+      if (terminalTimers[index]) {
+        clearTimeout(terminalTimers[index]);
+        terminalTimers[index] = null;
+      }
+      
+      if (term.classList.contains('active')) {
+        term.classList.remove('active');
+        term.innerHTML = '';
+        btn.innerHTML = `<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="margin-bottom:-1px;"><polygon points="5 3 19 12 5 21 5 3"/></svg><span>Run Application</span>`;
+        return;
+      }
+      
+      term.classList.add('active');
+      btn.innerHTML = `<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="margin-bottom:-1px;"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/></svg><span>Stop Application</span>`;
+      
+      const concept = concepts[(index - 1) % concepts.length];
+      const isServer = (index % 2 === 0);
+      
+      let lines = [];
+      if (isServer) {
+        lines = [
+          `$ node server.js`,
+          `[info] Initializing HTTP server...`,
+          `[info] Binding network sockets to port ${3000 + index}...`,
+          `✔ Server successfully listening on http://localhost:${3000 + index}/`,
+          `[incoming] GET / from 127.0.0.1 - 200 OK`,
+          `stdout: "Hello Node.js Page ${index}"`
+        ];
+      } else {
+        lines = [
+          `$ node pipeline.js`,
+          `[info] Opening read stream for 'input_${index}.txt'...`,
+          `[info] Pipe zlib.createGzip() initialization...`,
+          `[info] Opening write stream for 'out_${index}.gz'...`,
+          `✔ Pipeline execution completed successfully!`,
+          `[info] Compressed archive file created: out_${index}.gz`
+        ];
+      }
+      
+      term.innerHTML = '';
+      let currentLine = 0;
+      
+      function printNextLine() {
+        if (currentLine >= lines.length || !term.classList.contains('active')) {
+          terminalTimers[index] = null;
+          return;
+        }
+        const lineDiv = document.createElement('div');
+        lineDiv.style.marginBottom = '4px';
+        lineDiv.textContent = lines[currentLine];
+        
+        if (lines[currentLine].startsWith('$')) {
+          lineDiv.style.color = '#ffffff';
+          lineDiv.style.fontWeight = 'bold';
+        } else if (lines[currentLine].startsWith('✔')) {
+          lineDiv.style.color = '#34d399';
+        } else if (lines[currentLine].startsWith('[incoming]')) {
+          lineDiv.style.color = '#60a5fa';
+        }
+        
+        term.appendChild(lineDiv);
+        currentLine++;
+        
+        // Auto-scroll the card container so the new terminal output is visible if it overflows the card height
+        const card = term.closest('.card');
+        if (card) {
+          card.scrollTop = card.scrollHeight;
+        }
+        
+        terminalTimers[index] = setTimeout(printNextLine, 400);
+      }
+      
+      printNextLine();
+    }
+
+    // Slider Engine Implementation
+    class InfiniteSlider {
+      constructor() {
+        this.track = document.getElementById('slider-track');
+        this.slideLeft = document.getElementById('slide-left');
+        this.slideCenter = document.getElementById('slide-center');
+        this.slideRight = document.getElementById('slide-right');
+        
+        this.btnPrev = document.getElementById('btn-prev');
+        this.btnNext = document.getElementById('btn-next');
+        this.jumpInput = document.getElementById('jump-input');
+        
+        this.currentPage = 1;
+        this.totalPages = 1000;
+        
+        // Touch State parameters
+        this.startY = 0;
+        this.currentY = 0;
+        this.isDragging = false;
+        this.height = this.track.parentElement.offsetHeight || window.innerHeight;
+        
+        this.init();
+      }
+
+      init() {
+        // Read URL query parameters to retrieve initial page state
+        const urlParams = new URLSearchParams(window.location.search);
+        const startPage = parseInt(urlParams.get('page')) || 1;
+        this.currentPage = Math.min(Math.max(startPage, 1), this.totalPages);
+        this.jumpInput.value = this.currentPage;
+
+        this.renderSlides();
+        this.bindEvents();
+      }
+
+      bindEvents() {
+        // Touch interactions
+        this.track.addEventListener('touchstart', (e) => this.onTouchStart(e), { passive: true });
+        this.track.addEventListener('touchmove', (e) => this.onTouchMove(e), { passive: false });
+        this.track.addEventListener('touchend', () => this.onTouchEnd());
+
+        // Keyboard arrow navigation
+        window.addEventListener('keydown', (e) => {
+          if (e.key === 'ArrowUp' && this.currentPage > 1) {
+            this.animateToPage(-1);
+          } else if (e.key === 'ArrowDown' && this.currentPage < this.totalPages) {
+            this.animateToPage(1);
+          }
+        });
+
+        // Click Controls
+        this.btnPrev.addEventListener('click', () => this.animateToPage(-1));
+        this.btnNext.addEventListener('click', () => this.animateToPage(1));
+
+        // Page Jump Input
+        this.jumpInput.addEventListener('change', (e) => {
+          const val = parseInt(e.target.value);
+          if (val >= 1 && val <= this.totalPages) {
+            this.currentPage = val;
+            this.renderSlides();
+            this.updateURL();
+          } else {
+            e.target.value = this.currentPage;
+          }
+        });
+
+        // Handle viewport resize
+        window.addEventListener('resize', () => {
+          this.height = this.track.parentElement.offsetHeight || window.innerHeight;
+        });
+      }
+
+      onTouchStart(e) {
+        this.startY = e.touches[0].clientY;
+        this.isDragging = true;
+        this.track.style.transition = 'none'; // Lock animation frames
+      }
+
+      onTouchMove(e) {
+        if (!this.isDragging) return;
+        this.currentY = e.touches[0].clientY;
+        const deltaY = this.currentY - this.startY;
+
+        // Visual rubberbanding if at edges
+        if ((this.currentPage === 1 && deltaY > 0) || (this.currentPage === this.totalPages && deltaY < 0)) {
+          this.setTranslation(deltaY * 0.3); // Heavy damping
+        } else {
+          this.setTranslation(deltaY);
+        }
+        
+        // Prevent default browser scrolling ONLY if swiping vertically
+        if (Math.abs(deltaY) > 10) {
+          e.preventDefault();
+        }
+      }
+
+      onTouchEnd() {
+        if (!this.isDragging) return;
+        this.isDragging = false;
+        
+        const deltaY = this.currentY - this.startY;
+        const threshold = this.height * 0.20; // 20% window trigger
+
+        this.track.style.transition = 'transform 0.25s cubic-bezier(0.215, 0.61, 0.355, 1)';
+
+        if (deltaY < -threshold && this.currentPage < this.totalPages) {
+          this.animateToPage(1);
+        } else if (deltaY > threshold && this.currentPage > 1) {
+          this.animateToPage(-1);
+        } else {
+          this.animateToPage(0); // Snap back to center
+        }
+      }
+
+      setTranslation(py) {
+        this.track.style.transform = `translate3d(0, ${py}px, 0)`;
+      }
+
+      animateToPage(direction) {
+        if (direction === 0) {
+          this.setTranslation(0);
+          return;
+        }
+
+        const targetY = -direction * this.height;
+        this.track.style.transition = 'transform 0.25s cubic-bezier(0.215, 0.61, 0.355, 1)';
+        this.setTranslation(targetY);
+
+        // Recycle DOM contents after transition animation
+        setTimeout(() => {
+          this.currentPage += direction;
+          this.track.style.transition = 'none';
+          this.setTranslation(0);
+          this.renderSlides();
+          this.updateURL();
+        }, 250);
+      }
+
+      renderSlides() {
+        // Set page indices
+        this.slideCenter.innerHTML = getPageContent(this.currentPage) || '<div class="card">No content.</div>';
+        this.slideLeft.innerHTML = getPageContent(this.currentPage - 1) || '<div class="card" style="opacity: 0.3;">Beginning of Course</div>';
+        this.slideRight.innerHTML = getPageContent(this.currentPage + 1) || '<div class="card" style="opacity: 0.3;">End of Course</div>';
+        
+        // Reset scroll position on active sliders
+        this.slideCenter.scrollTop = 0;
+        this.slideLeft.scrollTop = 0;
+        this.slideRight.scrollTop = 0;
+
+        // Button disabled states
+        this.btnPrev.disabled = this.currentPage === 1;
+        this.btnNext.disabled = this.currentPage === this.totalPages;
+        this.jumpInput.value = this.currentPage;
+      }
+
+      updateURL() {
+        const url = new URL(window.location);
+        url.searchParams.set('page', this.currentPage);
+        window.history.replaceState(null, '', url);
+      }
+    }
+
+    // Start Slider
+    window.addEventListener('DOMContentLoaded', () => {
+      new InfiniteSlider();
+    });
+  </script>
+</body>
+</html>

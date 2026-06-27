@@ -1,0 +1,377 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <!-- Google Search Console Verification -->
+  <meta name="google-site-verification" content="_OWB0JsK2RKq1DHn-XfFSnH8RAwbUnQw-ulZeLKy8p8" />
+  <title>Blog – NextSem</title>
+  <meta name="description" content="Read deep-dive articles, guides, and tutorials about Node.js backend development, asynchronous JavaScript, event loop, and security best practices." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+  <!-- amp ads -->
+  <script async custom-element="amp-auto-ads" src="https://cdn.ampproject.org/v0/amp-auto-ads-0.1.js"></script>
+  <!-- end of amp ads -->
+  <!-- Google AdSense -->
+  <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-4242865347895866" crossorigin="anonymous"></script>
+  <!-- end of ads -->
+  <link rel="stylesheet" href="style.css?v=35" />
+  <style>
+    .page-hero {
+      padding: 2.5rem 1.25rem 2rem;
+      text-align: center;
+      background: radial-gradient(ellipse at top, rgba(104,160,99,0.08) 0%, transparent 70%);
+      border-bottom: 1px solid var(--border);
+    }
+    .page-hero h1 { font-size: clamp(1.6rem, 6vw, 2.5rem); font-weight: 900; letter-spacing: -1px; margin-bottom: 0.75rem; }
+    .page-hero p { color: var(--text-secondary); font-size: 0.95rem; max-width: 100%; margin: 0 auto; }
+    .page-hero .badge {
+      display: inline-block;
+      background: rgba(104,160,99,0.1);
+      border: 1px solid rgba(104,160,99,0.25);
+      color: var(--node-green-light);
+      font-size: 0.75rem;
+      font-weight: 600;
+      padding: 0.3rem 0.9rem;
+      border-radius: 999px;
+      margin-bottom: 1rem;
+    }
+
+    .blog-container { max-width: 100%; margin: 0 auto; padding: 1.75rem 1.25rem 6rem; }
+
+    /* Category Filter */
+    .blog-filters {
+      display: flex;
+      justify-content: center;
+      gap: 0.75rem;
+      margin-bottom: 3.5rem;
+      flex-wrap: wrap;
+    }
+    .filter-btn {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      color: var(--text-secondary);
+      padding: 0.5rem 1.2rem;
+      font-size: 0.88rem;
+      font-weight: 600;
+      border-radius: 999px;
+      cursor: pointer;
+      transition: var(--transition);
+    }
+    .filter-btn:hover, .filter-btn.active {
+      background: rgba(104,160,99,0.1);
+      border-color: var(--node-green);
+      color: var(--node-green-light);
+    }
+
+    .blog-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(min(280px, 100%), 1fr));
+      gap: 1.25rem;
+    }
+    .blog-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      transition: var(--transition);
+      text-decoration: none;
+      color: inherit;
+    }
+    .blog-card:hover {
+      border-color: var(--border-hover);
+      transform: translateY(-5px);
+      box-shadow: var(--shadow-card);
+    }
+    .blog-card-cover {
+      height: 180px;
+      background: linear-gradient(135deg, rgba(17,24,39,0.6) 0%, rgba(104,160,99,0.15) 100%);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 3.5rem;
+      border-bottom: 1px solid var(--border);
+      transition: var(--transition);
+      position: relative;
+    }
+    .blog-card:hover .blog-card-cover {
+      background: linear-gradient(135deg, rgba(17,24,39,0.4) 0%, rgba(104,160,99,0.25) 100%);
+    }
+    .blog-card-body {
+      padding: 1.75rem;
+      display: flex;
+      flex-direction: column;
+      flex-grow: 1;
+    }
+    .blog-card-meta {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      font-size: 0.78rem;
+      color: var(--text-secondary);
+      margin-bottom: 0.75rem;
+    }
+    .blog-card-tag {
+      background: rgba(255,255,255,0.05);
+      padding: 0.15rem 0.5rem;
+      border-radius: 4px;
+      color: var(--text-primary);
+      font-weight: 500;
+    }
+    .blog-card-title {
+      font-size: 1.25rem;
+      font-weight: 800;
+      line-height: 1.4;
+      margin-bottom: 0.75rem;
+      letter-spacing: -0.5px;
+      color: var(--text-primary);
+      transition: var(--transition);
+    }
+    .blog-card:hover .blog-card-title {
+      color: var(--node-green-light);
+    }
+    .blog-card-description {
+      font-size: 0.9rem;
+      color: var(--text-secondary);
+      line-height: 1.6;
+      margin-bottom: 1.5rem;
+      flex-grow: 1;
+    }
+    .blog-card-footer {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border-top: 1px solid var(--border);
+      padding-top: 1rem;
+      font-size: 0.8rem;
+      color: var(--text-muted);
+    }
+    .blog-card-author {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+    .blog-card-avatar {
+      width: 24px;
+      height: 24px;
+      border-radius: 50%;
+      background: var(--node-green);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 700;
+      color: var(--bg-dark);
+      font-size: 0.65rem;
+    }
+
+    /* Ad Banner space */
+    .blog-ad-row {
+      margin-top: 4rem;
+      display: flex;
+      justify-content: center;
+    }
+
+    @media (max-width: 768px) {
+      .blog-container { padding: 40px 1.5rem 80px; }
+      .blog-grid { grid-template-columns: 1fr; }
+    }
+  </style>
+  <!-- PWA & Android Meta Tags -->
+  <link rel="manifest" href="manifest.json" />
+  <meta name="mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="application-name" content="NextSem" />
+  <meta name="apple-mobile-web-app-title" content="NextSem" />
+  <meta name="theme-color" content="#0a0e13" />
+  <meta name="msapplication-navbutton-color" content="#0a0e13" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <link rel="icon" sizes="192x192" href="icon-192.png" />
+  <link rel="apple-touch-icon" href="icon-192.png" />
+</head>
+<body>
+  <!-- amp ads -->
+  <amp-auto-ads type="adsense" data-ad-client="ca-pub-4242865347895866"></amp-auto-ads>
+  <!-- end of amp ads -->
+
+  <div class="app-container">
+    <!-- Navbar -->
+    <nav class="navbar" id="navbar">
+      <div class="nav-container">
+        <a href="index.html" class="nav-back-btn" id="nav-back-btn" aria-label="Go back">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="18" height="18"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>
+        </a>
+        <span class="nav-page-title" id="nav-title">Tech Blog</span>
+        <div class="nav-actions">
+          <button class="btn-auth" id="auth-trigger-btn" aria-label="Sign in">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+          </button>
+          <div class="user-panel" id="user-panel" style="display:none;"><div class="user-avatar" id="user-avatar"></div></div>
+        </div>
+      </div>
+    </nav>
+
+    <!-- Hero -->
+    <div class="page-hero">
+    <span class="badge">Resources</span>
+    <h1>The NextSem <span class="gradient-text">Blog</span></h1>
+    <p>In-depth tutorials, production checklists, and technical concepts explained simply to accelerate your Node.js expertise.</p>
+  </div>
+
+  <!-- Main Content -->
+  <div class="blog-container">
+    
+    <!-- Category Filters -->
+    <div class="blog-filters">
+      <button class="filter-btn active" data-category="all">All Articles</button>
+      <button class="filter-btn" data-category="core">Core Architecture</button>
+      <button class="filter-btn" data-category="async">Async JS</button>
+      <button class="filter-btn" data-category="production">Best Practices &amp; Security</button>
+    </div>
+
+    <!-- Blog Grid -->
+    <div class="blog-grid" id="blog-grid">
+      
+      <!-- Article 1 -->
+      <a href="blog-event-loop.html" class="blog-card" data-category="core">
+        <div class="blog-card-cover">⬡</div>
+        <div class="blog-card-body">
+          <div class="blog-card-meta">
+            <span class="blog-card-tag">Core Architecture</span>
+            <span>June 24, 2026</span>
+          </div>
+          <h2 class="blog-card-title">Demystifying the Node.js Event Loop (With Visuals)</h2>
+          <p class="blog-card-description">Understand the single-threaded powerhouse of Node.js. Discover how phases like Timers, Poll, and Check execute behind the scenes.</p>
+          <div class="blog-card-footer">
+            <div class="blog-card-author">
+              <div class="blog-card-avatar">NP</div>
+              <span>NextSem Team</span>
+            </div>
+            <span>6 min read</span>
+          </div>
+        </div>
+      </a>
+
+      <!-- Article 2 -->
+      <a href="blog-async-javascript.html" class="blog-card" data-category="async">
+        <div class="blog-card-cover">⚡</div>
+        <div class="blog-card-body">
+          <div class="blog-card-meta">
+            <span class="blog-card-tag">Async JS</span>
+            <span>June 24, 2026</span>
+          </div>
+          <h2 class="blog-card-title">From Callbacks to Async/Await: A Node.js Guide</h2>
+          <p class="blog-card-description">Master asynchronous programming. Avoid Callback Hell, learn Promise chaining, and write clean async/await flows with error handling.</p>
+          <div class="blog-card-footer">
+            <div class="blog-card-author">
+              <div class="blog-card-avatar">NP</div>
+              <span>NextSem Team</span>
+            </div>
+            <span>5 min read</span>
+          </div>
+        </div>
+      </a>
+
+      <!-- Article 3 -->
+      <a href="blog-production-checklist.html" class="blog-card" data-category="production">
+        <div class="blog-card-cover">🛡️</div>
+        <div class="blog-card-body">
+          <div class="blog-card-meta">
+            <span class="blog-card-tag">Best Practices</span>
+            <span>June 24, 2026</span>
+          </div>
+          <h2 class="blog-card-title">10 Essential Node.js Production &amp; Security Best Practices</h2>
+          <p class="blog-card-description">A must-read checklist before deployment. Learn about environment variables, rate limiting, process managers, and helmet headers.</p>
+          <div class="blog-card-footer">
+            <div class="blog-card-author">
+              <div class="blog-card-avatar">NP</div>
+              <span>NextSem Team</span>
+            </div>
+            <span>7 min read</span>
+          </div>
+        </div>
+      </a>
+
+    </div>
+
+    <!-- Leaderboard Ad Slot in Blog Hub -->
+    <div class="blog-ad-row">
+      <div class="ad-slot ad-slot-leaderboard" aria-label="Advertisement" style="margin: 0; width: 100%;">
+        <span class="ad-label">Advertisement</span>
+        <ins class="adsbygoogle"
+             style="display:block"
+             data-ad-client="ca-pub-4242865347895866"
+             data-ad-slot="1111111111"
+             data-ad-format="auto"
+             data-full-width-responsive="true"></ins>
+        <script>(adsbygoogle = window.adsbygoogle || []).push({});</script>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- Footer -->
+  <footer class="footer">
+    <div class="footer-container">
+      <div class="footer-brand">
+        <svg class="logo-icon" viewBox="0 0 84 64" fill="none" stroke="currentColor" stroke-width="11" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M 16 52 L 16 26 C 16 17.5 22.5 11 30.5 11 C 38.5 11 45 17.5 45 26 L 45 42 C 45 48 49 53 56 53 C 63 53 67 48 67 42 C 67 36 63 32 56 32 C 49 32 45 28 45 22 C 45 16 49 11 56 11 C 63 11 67 16 67 22" />
+        </svg>
+        <span class="logo-text">next sem</span>
+      </div>
+      <div class="footer-links">
+        <a href="index.html" class="footer-link">Home</a>
+        <a href="blog.html" class="footer-link">Blog</a>
+        <a href="index.html#quiz" class="footer-link">Quiz</a>
+        <a href="about.html" class="footer-link">About</a>
+        <a href="privacy.html" class="footer-link">Privacy Policy</a>
+        <a href="contact.html" class="footer-link">Contact</a>
+      </div>
+      <p class="footer-text">Built with ❤️ to make Node.js learning accessible for everyone.</p>
+      <p class="footer-copy">© 2026 NextSem · Free &amp; Open Source</p>
+    </div>
+  </footer>
+
+  </div> <!-- Close app-container -->
+
+  <script>
+    // Header background toggle on scroll
+    const navbar = document.getElementById('navbar');
+    if (navbar) {
+      window.addEventListener('scroll', () => {
+        navbar.classList.toggle('scrolled', window.scrollY > 30);
+      });
+    }
+
+    // Category filtering logic
+    const filterBtns = document.querySelectorAll('.filter-btn');
+    const blogCards = document.querySelectorAll('.blog-card');
+
+    filterBtns.forEach(btn => {
+      btn.addEventListener('click', () => {
+        // Toggle active class
+        filterBtns.forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+
+        const filter = btn.getAttribute('data-category');
+
+        blogCards.forEach(card => {
+          if (filter === 'all') {
+            card.style.display = 'flex';
+          } else {
+            const cardCat = card.getAttribute('data-category');
+            if (cardCat === filter) {
+              card.style.display = 'flex';
+            } else {
+              card.style.display = 'none';
+            }
+          }
+        });
+      });
+    });
+  </script>
+  <script src="mobile-nav.js?v=35"></script>
+</body>
+</html>

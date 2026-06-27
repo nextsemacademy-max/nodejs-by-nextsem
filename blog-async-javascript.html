@@ -1,0 +1,392 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <!-- Google Search Console Verification -->
+  <meta name="google-site-verification" content="_OWB0JsK2RKq1DHn-XfFSnH8RAwbUnQw-ulZeLKy8p8" />
+  <title>From Callbacks to Async/Await: A Node.js Guide – NextSem</title>
+  <meta name="description" content="Master asynchronous programming in Node.js. Learn about callbacks, Promise chaining, Promise.all, async/await, and proper error handling structures." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+  <!-- amp ads -->
+  <script async custom-element="amp-auto-ads" src="https://cdn.ampproject.org/v0/amp-auto-ads-0.1.js"></script>
+  <!-- end of amp ads -->
+  <!-- Google AdSense -->
+  <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-4242865347895866" crossorigin="anonymous"></script>
+  <!-- end of ads -->
+  <link rel="stylesheet" href="style.css?v=35" />
+  <style>
+    .article-container {
+      max-width: 800px;
+      margin: 0 auto;
+      padding: 120px 1.5rem 80px;
+    }
+    .back-link {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      color: var(--node-green-light);
+      text-decoration: none;
+      font-size: 0.9rem;
+      font-weight: 600;
+      margin-bottom: 2rem;
+      transition: var(--transition);
+    }
+    .back-link:hover {
+      transform: translateX(-3px);
+      color: var(--node-green);
+    }
+    
+    .article-header {
+      margin-bottom: 3rem;
+      border-bottom: 1px solid var(--border);
+      padding-bottom: 2rem;
+    }
+    .article-meta {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      font-size: 0.85rem;
+      color: var(--text-secondary);
+      margin-bottom: 1rem;
+    }
+    .article-tag {
+      background: rgba(104, 160, 99, 0.1);
+      border: 1px solid rgba(104, 160, 99, 0.2);
+      color: var(--node-green-light);
+      padding: 0.2rem 0.6rem;
+      border-radius: 4px;
+      font-weight: 600;
+    }
+    .article-title {
+      font-size: clamp(2rem, 5vw, 2.75rem);
+      line-height: 1.25;
+      font-weight: 900;
+      letter-spacing: -1px;
+      color: var(--text-primary);
+      margin-bottom: 1.25rem;
+    }
+    .article-author-row {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+    }
+    .article-avatar {
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      background: var(--node-green);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 700;
+      color: var(--bg-dark);
+    }
+    .article-author-info h4 {
+      font-size: 0.9rem;
+      font-weight: 600;
+      color: var(--text-primary);
+    }
+    .article-author-info p {
+      font-size: 0.78rem;
+      color: var(--text-muted);
+    }
+
+    /* Article Content styling */
+    .article-content {
+      font-size: 1.05rem;
+      line-height: 1.8;
+      color: var(--text-secondary);
+    }
+    .article-content h2 {
+      font-size: 1.75rem;
+      font-weight: 800;
+      color: var(--text-primary);
+      margin: 2.5rem 0 1rem;
+      letter-spacing: -0.5px;
+    }
+    .article-content h3 {
+      font-size: 1.3rem;
+      font-weight: 700;
+      color: var(--text-primary);
+      margin: 2rem 0 0.75rem;
+    }
+    .article-content p {
+      margin-bottom: 1.5rem;
+    }
+    .article-content ul, .article-content ol {
+      margin-bottom: 1.5rem;
+      padding-left: 1.5rem;
+    }
+    .article-content li {
+      margin-bottom: 0.5rem;
+    }
+    .article-content code {
+      font-family: var(--font-mono);
+      font-size: 0.9rem;
+      background: rgba(255,255,255,0.06);
+      padding: 0.2rem 0.4rem;
+      border-radius: 4px;
+      color: var(--text-primary);
+    }
+    .article-content pre {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-md);
+      padding: 1.25rem;
+      margin: 1.5rem 0;
+      overflow-x: auto;
+    }
+    .article-content pre code {
+      background: none;
+      padding: 0;
+      color: var(--text-primary);
+      font-size: 0.88rem;
+      line-height: 1.5;
+    }
+    
+    /* Callouts */
+    .article-callout {
+      background: rgba(104,160,99,0.05);
+      border-left: 4px solid var(--node-green);
+      padding: 1.25rem;
+      border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
+      margin: 1.75rem 0;
+    }
+    .article-callout p {
+      margin: 0;
+      font-size: 0.95rem;
+      color: var(--text-primary);
+    }
+
+    /* Ad slot inside article */
+    .article-ad {
+      margin: 2.5rem 0;
+    }
+  </style>
+  <!-- PWA & Android Meta Tags -->
+  <link rel="manifest" href="manifest.json" />
+  <meta name="mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="application-name" content="NextSem" />
+  <meta name="apple-mobile-web-app-title" content="NextSem" />
+  <meta name="theme-color" content="#0a0e13" />
+  <meta name="msapplication-navbutton-color" content="#0a0e13" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <link rel="icon" sizes="192x192" href="icon-192.png" />
+  <link rel="apple-touch-icon" href="icon-192.png" />
+</head>
+<body>
+  <!-- amp ads -->
+  <amp-auto-ads type="adsense" data-ad-client="ca-pub-4242865347895866"></amp-auto-ads>
+  <!-- end of amp ads -->
+
+  <!-- Navigation -->
+  <nav class="navbar" id="navbar">
+    <div class="nav-container">
+      <a href="index.html" class="nav-logo">
+        <svg class="logo-icon" viewBox="0 0 84 64" fill="none" stroke="currentColor" stroke-width="11" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M 16 52 L 16 26 C 16 17.5 22.5 11 30.5 11 C 38.5 11 45 17.5 45 26 L 45 42 C 45 48 49 53 56 53 C 63 53 67 48 67 42 C 67 36 63 32 56 32 C 49 32 45 28 45 22 C 45 16 49 11 56 11 C 63 11 67 16 67 22" />
+        </svg>
+        <span class="logo-text">Node.js by NextSem</span>
+      </a>
+      <ul class="nav-links" id="nav-links">
+        <li><a href="index.html#curriculum" class="nav-link">Curriculum</a></li>
+        <li><a href="lessons.html?v=32" class="nav-link">Lessons</a></li>
+        <li><a href="playground.html?v=32" class="nav-link">Playground</a></li>
+        <li class="mobile-only"><a href="blog.html" class="nav-link">Blog</a></li>
+        <li class="mobile-only"><a href="about.html" class="nav-link">About</a></li>
+        <li class="mobile-only"><a href="contact.html" class="nav-link">Contact Us</a></li>
+        <li class="mobile-only"><a href="privacy.html" class="nav-link">Privacy Policy</a></li>
+        <li class="mobile-actions">
+          <a href="contact.html"><button class="btn-start">Contact Us</button></a>
+        </li>
+      </ul>
+      <div class="nav-actions">
+        <a href="contact.html"><button class="btn-start">Contact Us</button></a>
+        <button class="hamburger" id="hamburger" aria-label="Toggle menu">
+          <span></span><span></span><span></span>
+        </button>
+      </div>
+    </div>
+  </nav>
+
+  <!-- Main Article Container -->
+  <article class="article-container">
+    <a href="blog.html" class="back-link">
+      <span>←</span> Back to Blog
+    </a>
+
+    <header class="article-header">
+      <div class="article-meta">
+        <span class="article-tag">Async JS</span>
+        <span>June 24, 2026</span>
+        <span>•</span>
+        <span>5 min read</span>
+      </div>
+      <h1 class="article-title">From Callbacks to Async/Await: A Node.js Guide</h1>
+      <div class="article-author-row">
+        <div class="article-avatar">NP</div>
+        <div class="article-author-info">
+          <h4>NextSem Team</h4>
+          <p>Educational Content Creators</p>
+        </div>
+      </div>
+    </header>
+
+    <div class="article-content">
+      <p>Asynchronous programming is at the very core of Node.js. Unlike traditional languages that create a new thread for each request, Node.js runs on a single thread and uses asynchronous execution to manage thousands of operations simultaneously. Over the years, JavaScript has evolved to make writing asynchronous code cleaner, shifting from callbacks to Promises, and finally to async/await. In this guide, we'll cover this evolution and master the best practices for handling asynchronous actions in Node.js.</p>
+
+      <h2>1. The Early Days: Callbacks</h2>
+      <p>In early versions of Node.js, asynchronous actions were handled using callbacks. A callback is simply a function passed as an argument to another function, which executes once the task is finished.</p>
+      <p>Node.js standardized the <strong>error-first callback pattern</strong>, where the first argument of the callback is reserved for an error object, and the second is the result:</p>
+
+      <pre><code>const fs = require('fs');
+
+fs.readFile('config.json', 'utf8', (err, data) => {
+  if (err) {
+    console.error('Error reading file:', err);
+    return;
+  }
+  console.log('File content:', data);
+});</code></pre>
+
+      <h3>The Problem: Callback Hell</h3>
+      <p>Callbacks work fine for single operations, but nesting multiple asynchronous operations quickly leads to "Callback Hell" or the "Pyramid of Doom." It makes code unreadable, fragile, and extremely difficult to handle errors properly:</p>
+
+      <pre><code>getData(userId, (err, user) => {
+  if (err) return handleError(err);
+  getPermissions(user.role, (err, perms) => {
+    if (err) return handleError(err);
+    logAccess(user.id, (err) => {
+      if (err) return handleError(err);
+      console.log('Access logged successfully');
+    });
+  });
+});</code></pre>
+
+      <!-- In-Article Ad Slot -->
+      <div class="article-ad">
+        <div class="ad-slot ad-slot-rectangle" aria-label="Advertisement" style="margin: 0;">
+          <span class="ad-label">Advertisement</span>
+          <ins class="adsbygoogle"
+               style="display:block"
+               data-ad-client="ca-pub-4242865347895866"
+               data-ad-slot="2222222222"
+               data-ad-format="auto"
+               data-full-width-responsive="true"></ins>
+          <script>(adsbygoogle = window.adsbygoogle || []).push({});</script>
+        </div>
+      </div>
+
+      <h2>2. The Clean-Up: Promises</h2>
+      <p>To solve callback nesting, ES6 introduced **Promises**. A Promise represents the eventual completion (or failure) of an asynchronous operation and its resulting value. It allows us to flatten our code using method chaining:</p>
+
+      <pre><code>getData(userId)
+  .then(user => getPermissions(user.role))
+  .then(perms => logAccess(perms.userId))
+  .then(() => console.log('Access logged successfully'))
+  .catch(err => handleError(err)); // Handles any error in the chain</code></pre>
+
+      <p>Promises significantly improve error handling because a single <code>.catch()</code> at the end of the chain will catch any error thrown at any step along the way.</p>
+
+      <h3>Promisify in Node.js</h3>
+      <p>Node.js includes a built-in utility called <code>util.promisify</code> to convert traditional callback-based APIs into Promise-based APIs:</p>
+      
+      <pre><code>const fs = require('fs');
+const util = require('util');
+
+const readFilePromise = util.promisify(fs.readFile);
+
+readFilePromise('config.json', 'utf8')
+  .then(data => console.log(data))
+  .catch(err => console.error(err));</code></pre>
+
+      <h2>3. Modern Standard: Async/Await</h2>
+      <p>Introduced in ES2017, <code>async/await</code> is a syntax wrapper built on top of Promises. It allows you to write asynchronous code that reads like synchronous code, making it incredibly intuitive and clean.</p>
+      <p>To use it, you mark a function as <code>async</code>, which automatically causes it to return a Promise. Inside the function, you use the <code>await</code> keyword before any Promise-returning function. This pauses execution until the Promise resolves or rejects:</p>
+
+      <pre><code>async function run() {
+  try {
+    const data = await readFilePromise('config.json', 'utf8');
+    console.log('Data:', data);
+  } catch (err) {
+    console.error('Error:', err);
+  }
+}
+
+run();</code></pre>
+
+      <div class="article-callout">
+        <p><strong>💡 Pro-Tip:</strong> Always wrap your <code>await</code> operations in a <code>try/catch</code> block. If you forget to handle a rejected Promise, Node.js will trigger an <code>UnhandledPromiseRejectionWarning</code>, which can crash your application in future versions.</p>
+      </div>
+
+      <h2>4. Parallel Execution with Promise.all</h2>
+      <p>A common mistake when starting with <code>async/await</code> is executing independent operations sequentially, which slows down execution speed. For example:</p>
+
+      <pre><code>// ❌ Slow: Executes sequentially (total time = userTime + postsTime)
+const user = await getUser(id);
+const posts = await getPosts(id);</code></pre>
+
+      <p>If fetching posts doesn't depend on the user object, you should run them concurrently using <code>Promise.all()</code>. This starts both operations at the same time:</p>
+
+      <pre><code>//  Fast: Executes concurrently (total time = max(userTime, postsTime))
+const [user, posts] = await Promise.all([
+  getUser(id),
+  getPosts(id)
+]);</code></pre>
+
+      <h2>Summary</h2>
+      <p>Asynchronous programming has come a long way. In modern Node.js development, <strong>async/await</strong> is the absolute standard. It keeps codebase structure clean and readable while retaining the non-blocking execution model that makes Node.js so powerful. Keep this guide in mind when building routers, connecting to database layers, or writing scripts!</p>
+    </div>
+  </article>
+
+  <!-- Footer -->
+  <footer class="footer">
+    <div class="footer-container">
+      <div class="footer-brand">
+        <svg class="logo-icon" viewBox="0 0 84 64" fill="none" stroke="currentColor" stroke-width="11" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M 16 52 L 16 26 C 16 17.5 22.5 11 30.5 11 C 38.5 11 45 17.5 45 26 L 45 42 C 45 48 49 53 56 53 C 63 53 67 48 67 42 C 67 36 63 32 56 32 C 49 32 45 28 45 22 C 45 16 49 11 56 11 C 63 11 67 16 67 22" />
+        </svg>
+        <span class="logo-text">next sem</span>
+      </div>
+      <div class="footer-links">
+        <a href="index.html" class="footer-link">Home</a>
+        <a href="blog.html" class="footer-link">Blog</a>
+        <a href="privacy.html" class="footer-link">Privacy Policy</a>
+        <a href="contact.html" class="footer-link">Contact</a>
+      </div>
+      <p class="footer-text">Built with ❤️ to make Node.js learning accessible for everyone.</p>
+      <p class="footer-copy">© 2026 NextSem · Free &amp; Open Source</p>
+    </div>
+  </footer>
+
+  <script>
+    const navbar = document.getElementById('navbar');
+    window.addEventListener('scroll', () => {
+      navbar.classList.toggle('scrolled', window.scrollY > 30);
+    });
+
+    // Hamburger menu toggle
+    const hamburger = document.getElementById('hamburger');
+    const navLinks = document.getElementById('nav-links');
+    if (hamburger && navLinks) {
+      hamburger.addEventListener('click', () => {
+        navLinks.classList.toggle('active');
+        hamburger.classList.toggle('active');
+      });
+
+      // Close mobile menu when clicking links or buttons inside dropdown
+      document.querySelectorAll('.nav-link, .nav-links .btn-start').forEach(el => {
+        el.addEventListener('click', () => {
+          navLinks.classList.remove('active');
+          hamburger.classList.remove('active');
+        });
+      });
+    }
+  </script>
+  <script src="mobile-nav.js?v=35"></script>
+</body>
+</html>

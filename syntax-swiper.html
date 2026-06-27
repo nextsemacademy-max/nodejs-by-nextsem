@@ -1,0 +1,829 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Syntax Swiper - NextSem Staging</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  
+  <style>
+    :root {
+      --bg-color: #0b0f19;
+      --card-bg: #151d30;
+      --primary: #10b981;
+      --danger: #ef4444;
+      --text: #f3f4f6;
+      --text-muted: #9ca3af;
+      --border: #1f2937;
+      --header-bg: #111827;
+      --font-sans: 'Inter', sans-serif;
+      --font-mono: 'JetBrains Mono', monospace;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      -webkit-tap-highlight-color: transparent;
+      user-select: none;
+    }
+
+    body {
+      background-color: var(--bg-color);
+      color: var(--text);
+      font-family: var(--font-sans);
+      height: 100vh;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* --- Header --- */
+    .header {
+      background-color: var(--header-bg);
+      border-bottom: 1px solid var(--border);
+      padding: 12px 20px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-shrink: 0;
+      z-index: 10;
+    }
+
+    .title-group {
+      display: flex;
+      flex-direction: column;
+    }
+
+    .title {
+      font-size: 1.1rem;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .badge {
+      background-color: rgba(16, 185, 129, 0.15);
+      color: var(--primary);
+      border: 1px solid rgba(16, 185, 129, 0.3);
+      font-size: 0.7rem;
+      font-weight: 600;
+      padding: 1px 6px;
+      border-radius: 9999px;
+      text-transform: uppercase;
+    }
+
+    .stats {
+      display: flex;
+      gap: 16px;
+      font-size: 0.85rem;
+      font-weight: 600;
+    }
+
+    .stat-val {
+      color: var(--primary);
+    }
+
+    .back-btn {
+      color: var(--text-muted);
+      text-decoration: none;
+      font-size: 0.85rem;
+      transition: color 0.2s;
+    }
+
+    .back-btn:hover {
+      color: var(--text);
+    }
+
+    /* --- Swiper Play Area --- */
+    .play-area {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      position: relative;
+      width: 100%;
+      padding: 20px;
+      perspective: 1000px;
+    }
+
+    .card-container {
+      width: 100%;
+      max-width: 380px;
+      height: 480px;
+      position: relative;
+      z-index: 5;
+    }
+
+    .swiper-card {
+      width: 100%;
+      height: 100%;
+      background-color: var(--card-bg);
+      border: 2px solid var(--border);
+      border-radius: 20px;
+      position: absolute;
+      top: 0;
+      left: 0;
+      padding: 24px;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+      box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.4);
+      cursor: grab;
+      will-change: transform, opacity;
+      transform-origin: 50% 100%;
+      transition: transform 0.2s ease-out; /* Used during resets */
+    }
+
+    .swiper-card.dragging {
+      transition: none !important; /* No transitions during drag */
+      cursor: grabbing;
+    }
+
+    .card-hdr {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+      padding-bottom: 8px;
+    }
+
+    .card-topic {
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      font-weight: 700;
+      color: var(--text-muted);
+      letter-spacing: 0.05em;
+    }
+
+    .code-container {
+      flex: 1;
+      background-color: rgba(0, 0, 0, 0.2);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 16px;
+      font-family: var(--font-mono);
+      font-size: 0.8rem;
+      line-height: 1.45;
+      overflow: auto;
+      white-space: pre-wrap;
+      word-break: break-all;
+      user-select: text;
+    }
+
+    .code-keyword { color: #f472b6; }
+    .code-func { color: #60a5fa; }
+    .code-string { color: #34d399; }
+    .code-comment { color: #6b7280; font-style: italic; }
+
+    /* --- Swipe Feedback Stamps --- */
+    .stamp {
+      position: absolute;
+      top: 50px;
+      border: 4px solid;
+      border-radius: 8px;
+      padding: 8px 16px;
+      font-size: 1.6rem;
+      font-weight: 800;
+      text-transform: uppercase;
+      opacity: 0;
+      pointer-events: none;
+      z-index: 10;
+      letter-spacing: 0.1em;
+    }
+
+    .stamp-buggy {
+      left: 30px;
+      border-color: var(--danger);
+      color: var(--danger);
+      transform: rotate(-15deg);
+    }
+
+    .stamp-clean {
+      right: 30px;
+      border-color: var(--primary);
+      color: var(--primary);
+      transform: rotate(15deg);
+    }
+
+    /* --- Card Deck Styling (Stacked cards behind) --- */
+    .swiper-card:nth-child(3) {
+      transform: translate3d(0, 8px, 0) scale(0.95);
+      z-index: 1;
+      opacity: 0.5;
+      pointer-events: none;
+    }
+    .swiper-card:nth-child(2) {
+      transform: translate3d(0, 4px, 0) scale(0.98);
+      z-index: 2;
+      opacity: 0.8;
+      pointer-events: none;
+    }
+    .swiper-card:nth-child(1) {
+      transform: translate3d(0, 0, 0) scale(1);
+      z-index: 3;
+      opacity: 1;
+    }
+
+    /* --- Footer Control Buttons --- */
+    .control-footer {
+      background-color: var(--header-bg);
+      border-top: 1px solid var(--border);
+      padding: 18px;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 30px;
+      z-index: 10;
+      flex-shrink: 0;
+    }
+
+    .btn-circle {
+      width: 56px;
+      height: 56px;
+      border-radius: 50%;
+      border: 1px solid var(--border);
+      background-color: var(--card-bg);
+      cursor: pointer;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      transition: all 0.2s;
+    }
+
+    .btn-circle svg {
+      width: 24px;
+      height: 24px;
+      fill: none;
+      stroke-width: 2.5;
+    }
+
+    .btn-buggy {
+      border-color: rgba(239, 68, 68, 0.2);
+    }
+    .btn-buggy svg {
+      stroke: var(--danger);
+    }
+    .btn-buggy:hover {
+      background-color: rgba(239, 68, 68, 0.1);
+      transform: scale(1.08);
+    }
+
+    .btn-clean {
+      border-color: rgba(16, 185, 129, 0.2);
+    }
+    .btn-clean svg {
+      stroke: var(--primary);
+    }
+    .btn-clean:hover {
+      background-color: rgba(16, 185, 129, 0.1);
+      transform: scale(1.08);
+    }
+
+    /* --- Explanation slide-up card --- */
+    .explain-overlay {
+      position: absolute;
+      bottom: -100%;
+      left: 0;
+      width: 100%;
+      background-color: var(--header-bg);
+      border-top: 2px solid var(--border);
+      padding: 24px;
+      border-radius: 24px 24px 0 0;
+      transition: bottom 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+      z-index: 20;
+      box-shadow: 0 -10px 30px rgba(0, 0, 0, 0.5);
+    }
+
+    .explain-overlay.active {
+      bottom: 0;
+    }
+
+    .explain-title {
+      font-size: 1.1rem;
+      font-weight: 700;
+      margin-bottom: 8px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .explain-title.correct { color: var(--primary); }
+    .explain-title.incorrect { color: var(--danger); }
+
+    .explain-body {
+      font-size: 0.9rem;
+      color: var(--text-muted);
+      line-height: 1.5;
+      margin-bottom: 16px;
+    }
+
+    .explain-solution {
+      font-family: var(--font-mono);
+      font-size: 0.8rem;
+      background-color: rgba(0, 0, 0, 0.3);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 12px;
+      color: var(--primary);
+      overflow-x: auto;
+      white-space: pre-wrap;
+    }
+
+    .btn-close-explain {
+      background-color: var(--primary);
+      color: #fff;
+      border: none;
+      padding: 10px 20px;
+      border-radius: 8px;
+      font-weight: 600;
+      cursor: pointer;
+      font-size: 0.85rem;
+      display: block;
+      width: 100%;
+      text-align: center;
+    }
+
+    /* --- Confetti canvas --- */
+    #confetti-canvas {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+      z-index: 100;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Confetti Layer -->
+  <canvas id="confetti-canvas"></canvas>
+
+  <!-- Header -->
+  <header class="header">
+    <div class="title-group" style="display:flex; align-items:center; gap:8px;">
+      <!-- SVG Logo Icon -->
+      <svg class="logo-icon" viewBox="0 0 84 64" fill="none" stroke="#10b981" stroke-width="11" stroke-linecap="round" stroke-linejoin="round" style="width:32px;height:24px;flex-shrink:0;">
+        <path d="M 16 52 L 16 26 C 16 17.5 22.5 11 30.5 11 C 38.5 11 45 17.5 45 26 L 45 42 C 45 48 49 53 56 53 C 63 53 67 48 67 42 C 67 36 63 32 56 32 C 49 32 45 28 45 22 C 45 16 49 11 56 11 C 63 11 67 16 67 22" />
+      </svg>
+      <div class="title" style="color: #ffffff; font-family: var(--font-sans); font-weight: 800; font-size: 1.15rem; display: flex; flex-direction: column; line-height: 1.1; margin-right: 8px;">
+        <span style="font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.05em; color: #10b981; font-weight: 700;">Node.js by</span>
+        <span>NextSem</span>
+      </div>
+      <span class="badge">Syntax Swiper</span>
+    </div>
+
+    <div class="stats">
+      <div>Streak: <span class="stat-val" id="curr-streak">0</span></div>
+      <div>Best: <span class="stat-val" id="best-streak">0</span></div>
+    </div>
+
+    <a href="lessons.html" class="back-btn">Exit</a>
+  </header>
+
+  <!-- Swipe Area -->
+  <main class="play-area">
+    <div class="card-container" id="card-container">
+      <!-- Cards injected dynamically here -->
+    </div>
+  </main>
+
+  <!-- Footer buttons -->
+  <footer class="control-footer">
+    <button class="btn-circle btn-buggy" id="btn-buggy-left" title="Buggy (Swipe Left)">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+    </button>
+    
+    <button class="btn-circle btn-clean" id="btn-clean-right" title="Clean (Swipe Right)">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><polyline points="20 6 9 17 4 12"></polyline></svg>
+    </button>
+  </footer>
+
+  <!-- Explanation drawer overlay -->
+  <div class="explain-overlay" id="explain-overlay">
+    <div class="explain-title" id="explain-title">Answer Status</div>
+    <div class="explain-body" id="explain-desc">Explanation details.</div>
+    <div class="explain-solution" id="explain-solution">Corrected code block.</div>
+    <button class="btn-close-explain" id="btn-close-explain" style="margin-top: 16px;">Next Card</button>
+  </div>
+
+  <script>
+    // Quiz Cards Database
+    const quizDeck = [
+      {
+        title: "Express Routing Variables",
+        code: `const express = require('express');\nconst app = express();\n\napp.get('/users', (req, res) => {\n  // fetch users array\n  res.send(users);\n});`,
+        isBuggy: true,
+        bug: "Referencing an undeclared/undefined variable ('users').",
+        solution: `app.get('/users', (req, res) => {\n  const users = [{ name: 'Alice' }];\n  res.send(users);\n});`
+      },
+      {
+        title: "CommonJS Module Exports",
+        code: `const router = require('express').Router();\n\nrouter.get('/health', (req, res) => {\n  res.status(200).send('OK');\n});\n\nmodule.export = router;`,
+        isBuggy: true,
+        bug: "Typo in CommonJS module exports: 'module.export' instead of 'module.exports'.",
+        solution: `module.exports = router;`
+      },
+      {
+        title: "Asynchronous File Reading",
+        code: `const fs = require('fs');\n\n// Read package.json\nfs.readFile('package.json', (data) => {\n  console.log(data.toString());\n});`,
+        isBuggy: true,
+        bug: "Missing error parameter in Callback signature: 'fs.readFile' callbacks receive (err, data).",
+        solution: `fs.readFile('package.json', (err, data) => {\n  if (err) return console.error(err);\n  console.log(data.toString());\n});`
+      },
+      {
+        title: "Async Await Scope",
+        code: `const fs = require('fs/promises');\n\nfunction getAppConfig() {\n  const file = await fs.readFile('config.json');\n  return JSON.parse(file);\n}`,
+        isBuggy: true,
+        bug: "Cannot use 'await' keyword inside a non-async function declaration.",
+        solution: `async function getAppConfig() {\n  const file = await fs.readFile('config.json');\n  return JSON.parse(file);\n}`
+      },
+      {
+        title: "Express JSON Parser",
+        code: `const express = require('express');\nconst app = express();\n\n// Expect incoming JSON requests\napp.post('/api/data', (req, res) => {\n  console.log(req.body.name);\n  res.json({ ok: true });\n});`,
+        isBuggy: true,
+        bug: "Missing 'express.json()' middleware parser to read req.body payloads.",
+        solution: `const express = require('express');\nconst app = express();\n\napp.use(express.json()); // Add parser!\n\napp.post('/api/data', (req, res) => {\n  console.log(req.body.name);\n  res.json({ ok: true });\n});`
+      },
+      {
+        title: "Promise Error Bounds",
+        code: `const db = require('./db');\n\nfunction loadRecords() {\n  db.connect()\n    .then(client => {\n      return client.query('SELECT * FROM logs');\n    })\n    .then(results => {\n      console.log(results);\n    });\n}`,
+        isBuggy: true,
+        bug: "Unhandled Promise Rejection: Missing a '.catch()' method chain to catch database connection/query errors.",
+        solution: `function loadRecords() {\n  db.connect()\n    .then(client => {\n      return client.query('SELECT * FROM logs');\n    })\n    .then(results => {\n      console.log(results);\n    })\n    .catch(err => {\n      console.error("Failed loading logs", err);\n    });\n}`
+      },
+      {
+        title: "Correct Event Emitter Listeners",
+        code: `const EventEmitter = require('events');\nconst emitter = new EventEmitter();\n\nemitter.on('connection', (ip) => {\n  console.log('Connected from ' + ip);\n});\n\nemitter.emit('connection', '127.0.0.1');`,
+        isBuggy: false,
+        bug: "",
+        solution: "// Code is completely correct!"
+      },
+      {
+        title: "Correct Path Resolves",
+        code: `const path = require('path');\nconst absolutePath = path.resolve(__dirname, 'uploads', 'avatar.png');\nconsole.log(absolutePath);`,
+        isBuggy: false,
+        bug: "",
+        solution: "// Code is completely correct!"
+      },
+      {
+        title: "Express Middleware Signatures",
+        code: `const app = require('express')();\n\n// Error handling middleware\napp.use((req, res, next, err) => {\n  console.error(err.stack);\n  res.status(500).send('Broken!');\n});`,
+        isBuggy: true,
+        bug: "Incorrect signature order for error middleware: must have 4 parameters in exact order (err, req, res, next).",
+        solution: `app.use((err, req, res, next) => {\n  console.error(err.stack);\n  res.status(500).send('Broken!');\n});`
+      },
+      {
+        title: "JSON Parsing Error Bounds",
+        code: `const fs = require('fs');\n\nfunction readSettings() {\n  const raw = fs.readFileSync('settings.json', 'utf8');\n  const parsed = JSON.parse(raw);\n  return parsed;\n}`,
+        isBuggy: true,
+        bug: "Crashes on bad payload: 'JSON.parse' will crash the entire Node process if settings.json contains malformed JSON. Needs a try-catch block.",
+        solution: `function readSettings() {\n  try {\n    const raw = fs.readFileSync('settings.json', 'utf8');\n    return JSON.parse(raw);\n  } catch (err) {\n    console.error("JSON Parse Error", err);\n    return {};\n  }\n}`
+      }
+    ];
+
+    // --- Web Audio Synthesized Sound Engine ---
+    const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    
+    function playSound(type) {
+      if (audioCtx.state === 'suspended') {
+        audioCtx.resume();
+      }
+      
+      const osc = audioCtx.createOscillator();
+      const gainNode = audioCtx.createGain();
+      osc.connect(gainNode);
+      gainNode.connect(audioCtx.destination);
+      
+      const now = audioCtx.currentTime;
+
+      if (type === 'success') {
+        // High-pitched double chime
+        osc.type = 'triangle';
+        osc.frequency.setValueAtTime(523.25, now); // C5
+        osc.frequency.setValueAtTime(783.99, now + 0.08); // G5
+        gainNode.gain.setValueAtTime(0.15, now);
+        gainNode.gain.exponentialRampToValueAtTime(0.01, now + 0.25);
+        osc.start(now);
+        osc.stop(now + 0.25);
+      } else if (type === 'fail') {
+        // Low buzzing sawtooth drop
+        osc.type = 'sawtooth';
+        osc.frequency.setValueAtTime(164.81, now); // E3
+        osc.frequency.exponentialRampToValueAtTime(110.00, now + 0.35); // A2
+        gainNode.gain.setValueAtTime(0.12, now);
+        gainNode.gain.exponentialRampToValueAtTime(0.01, now + 0.35);
+        osc.start(now);
+        osc.stop(now + 0.35);
+      }
+    }
+
+    // --- Canvas Confetti Celebration System ---
+    const canvas = document.getElementById('confetti-canvas');
+    const ctx = canvas.getContext('2d');
+    let confettiList = [];
+    
+    function resizeCanvas() {
+      canvas.width = window.innerWidth;
+      canvas.height = window.innerHeight;
+    }
+    window.addEventListener('resize', resizeCanvas);
+    resizeCanvas();
+
+    function triggerConfetti() {
+      const colors = ['#10b981', '#3b82f6', '#f59e0b', '#ec4899', '#8b5cf6', '#ef4444'];
+      for (let i = 0; i < 80; i++) {
+        confettiList.push({
+          x: Math.random() * canvas.width,
+          y: canvas.height + 10,
+          size: Math.random() * 8 + 4,
+          color: colors[Math.floor(Math.random() * colors.length)],
+          vx: Math.random() * 6 - 3,
+          vy: -Math.random() * 12 - 8,
+          rotation: Math.random() * 360,
+          vRotation: Math.random() * 6 - 3,
+          opacity: 1
+        });
+      }
+      requestAnimationFrame(updateConfetti);
+    }
+
+    function updateConfetti() {
+      if (confettiList.length === 0) return;
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      
+      confettiList.forEach((c, idx) => {
+        c.x += c.vx;
+        c.y += c.vy;
+        c.vy += 0.28; // Gravity
+        c.rotation += c.vRotation;
+        
+        ctx.save();
+        ctx.translate(c.x, c.y);
+        ctx.rotate((c.rotation * Math.PI) / 180);
+        ctx.fillStyle = c.color;
+        ctx.globalAlpha = c.opacity;
+        ctx.fillRect(-c.size / 2, -c.size / 2, c.size, c.size);
+        ctx.restore();
+
+        // Fade near bottom
+        if (c.y > canvas.height - 100) {
+          c.opacity -= 0.05;
+        }
+
+        // Delete dead particles
+        if (c.y > canvas.height || c.opacity <= 0) {
+          confettiList.splice(idx, 1);
+        }
+      });
+      
+      requestAnimationFrame(updateConfetti);
+    }
+
+    // --- Tinder Card Controller ---
+    class SwiperDeck {
+      constructor() {
+        this.container = document.getElementById('card-container');
+        this.explainOverlay = document.getElementById('explain-overlay');
+        
+        this.currStreakEl = document.getElementById('curr-streak');
+        this.bestStreakEl = document.getElementById('best-streak');
+        
+        this.streak = 0;
+        this.bestStreak = 0;
+        
+        this.activeCard = null;
+        
+        // Gesture points
+        this.startX = 0;
+        this.startY = 0;
+        this.currentX = 0;
+        this.currentY = 0;
+        this.isDragging = false;
+        
+        this.deck = [...quizDeck];
+        this.shuffleDeck();
+        this.init();
+      }
+
+      shuffleDeck() {
+        this.deck.sort(() => Math.random() - 0.5);
+      }
+
+      init() {
+        this.renderDeck();
+        
+        // Explain Button Controls
+        document.getElementById('btn-close-explain').addEventListener('click', () => {
+          this.explainOverlay.classList.remove('active');
+          this.removeTopCardAndGoNext();
+        });
+
+        // Trigger Click buttons
+        document.getElementById('btn-buggy-left').addEventListener('click', () => this.programmaticSwipe(-1));
+        document.getElementById('btn-clean-right').addEventListener('click', () => this.programmaticSwipe(1));
+      }
+
+      renderDeck() {
+        this.container.innerHTML = '';
+        
+        // Render top 3 stacked cards
+        const maxDisplay = Math.min(this.deck.length, 3);
+        for (let i = 0; i < maxDisplay; i++) {
+          const cardData = this.deck[i];
+          const cardDiv = document.createElement('div');
+          cardDiv.className = 'swiper-card';
+          cardDiv.innerHTML = `
+            <div class="card-hdr">
+              <span class="card-topic">${cardData.title}</span>
+            </div>
+            <div class="code-container">
+              ${this.highlightCode(cardData.code)}
+            </div>
+            <div class="stamp stamp-buggy">BUGGY</div>
+            <div class="stamp stamp-clean">SAFE</div>
+          `;
+          
+          this.container.appendChild(cardDiv);
+        }
+        
+        this.setupActiveCard();
+      }
+
+      highlightCode(rawCode) {
+        // Basic markup formatting for code display inside prototype
+        return rawCode
+          .replace(/&/g, '&amp;')
+          .replace(/</g, '&lt;')
+          .replace(/>/g, '&gt;')
+          .replace(/(\/\/.*)/g, '<span class="code-comment">$1</span>')
+          .replace(/\b(const|let|var|require|module|exports|function|async|await|return|try|catch)\b/g, '<span class="code-keyword">$1</span>')
+          .replace(/('[^']*'|"[^"]*")/g, '<span class="code-string">$1</span>')
+          .replace(/\.([a-zA-Z_]\w*)\b(?=\()/g, '.<span class="code-func">$1</span>');
+      }
+
+      setupActiveCard() {
+        this.activeCard = this.container.querySelector('.swiper-card:nth-child(1)');
+        if (!this.activeCard) return;
+
+        // Pointer event bindings
+        this.activeCard.addEventListener('pointerdown', (e) => this.onDragStart(e));
+        this.activeCard.addEventListener('pointermove', (e) => this.onDragMove(e));
+        this.activeCard.addEventListener('pointerup', (e) => this.onDragEnd(e));
+        this.activeCard.addEventListener('pointercancel', (e) => this.onDragEnd(e));
+      }
+
+      onDragStart(e) {
+        if (this.explainOverlay.classList.contains('active')) return;
+        this.isDragging = true;
+        this.startX = e.clientX;
+        this.startY = e.clientY;
+        this.activeCard.classList.add('dragging');
+        this.activeCard.setPointerCapture(e.pointerId);
+      }
+
+      onDragMove(e) {
+        if (!this.isDragging) return;
+        this.currentX = e.clientX;
+        this.currentY = e.clientY;
+
+        const deltaX = this.currentX - this.startX;
+        const deltaY = this.currentY - this.startY;
+
+        // Calculate card rotation based on tilt
+        const rot = (deltaX / 15).toFixed(1);
+        this.activeCard.style.transform = `translate3d(${deltaX}px, ${deltaY}px, 0) rotate(${rot}deg)`;
+
+        // Stamp opacity
+        const cleanStamp = this.activeCard.querySelector('.stamp-clean');
+        const buggyStamp = this.activeCard.querySelector('.stamp-buggy');
+
+        if (deltaX > 20) {
+          cleanStamp.style.opacity = Math.min(deltaX / 100, 0.95);
+          buggyStamp.style.opacity = 0;
+        } else if (deltaX < -20) {
+          buggyStamp.style.opacity = Math.min(-deltaX / 100, 0.95);
+          cleanStamp.style.opacity = 0;
+        } else {
+          cleanStamp.style.opacity = 0;
+          buggyStamp.style.opacity = 0;
+        }
+      }
+
+      onDragEnd(e) {
+        if (!this.isDragging) return;
+        this.isDragging = false;
+        this.activeCard.classList.remove('dragging');
+        this.activeCard.releasePointerCapture(e.pointerId);
+
+        const deltaX = this.currentX - this.startX;
+        const threshold = window.innerWidth * 0.35; // 35% viewport threshold
+
+        if (deltaX > threshold) {
+          // Swipe Right -> Clean
+          this.handleAnswer(1);
+        } else if (deltaX < -threshold) {
+          // Swipe Left -> Buggy
+          this.handleAnswer(-1);
+        } else {
+          // Snap back
+          this.activeCard.style.transform = 'translate3d(0,0,0) rotate(0deg)';
+          const stamps = this.activeCard.querySelectorAll('.stamp');
+          stamps.forEach(s => s.style.opacity = 0);
+        }
+      }
+
+      programmaticSwipe(direction) {
+        if (this.explainOverlay.classList.contains('active') || !this.activeCard) return;
+        
+        const forceX = direction * window.innerWidth * 1.5;
+        this.activeCard.style.transition = 'transform 0.4s ease-in, opacity 0.4s';
+        
+        // Show corresponding stamp
+        const stampClass = direction === 1 ? '.stamp-clean' : '.stamp-buggy';
+        this.activeCard.querySelector(stampClass).style.opacity = 1;
+        
+        this.activeCard.style.transform = `translate3d(${forceX}px, 0px, 0) rotate(${direction * 30}deg)`;
+        this.activeCard.style.opacity = 0;
+        
+        setTimeout(() => {
+          this.handleAnswer(direction);
+        }, 300);
+      }
+
+      handleAnswer(userChoice) {
+        // userChoice: 1 = Clean, -1 = Buggy
+        const cardData = this.deck[0];
+        const isUserCorrect = (userChoice === 1 && !cardData.isBuggy) || (userChoice === -1 && cardData.isBuggy);
+
+        const titleEl = document.getElementById('explain-title');
+        const descEl = document.getElementById('explain-desc');
+        const solEl = document.getElementById('explain-solution');
+
+        if (isUserCorrect) {
+          playSound('success');
+          this.streak++;
+          this.currStreakEl.innerText = this.streak;
+          
+          if (this.streak > this.bestStreak) {
+            this.bestStreak = this.streak;
+            this.bestStreakEl.innerText = this.bestStreak;
+          }
+
+          // Streak Celebrations
+          if (this.streak > 0 && this.streak % 5 === 0) {
+            triggerConfetti();
+          }
+
+          titleEl.innerText = "✓ Correct!";
+          titleEl.className = "explain-title correct";
+          descEl.innerHTML = `Great work! That code block is indeed <strong>${cardData.isBuggy ? 'Buggy' : 'Clean'}</strong>.`;
+        } else {
+          playSound('fail');
+          this.streak = 0;
+          this.currStreakEl.innerText = this.streak;
+
+          titleEl.innerText = "✗ Incorrect";
+          titleEl.className = "explain-title incorrect";
+          descEl.innerHTML = `Oh no! This block was actually <strong>${cardData.isBuggy ? 'Buggy' : 'Clean'}</strong>.`;
+        }
+
+        // Configure explanation solution
+        if (cardData.isBuggy) {
+          descEl.innerHTML += `<br><br><strong>Why:</strong> ${cardData.bug}`;
+          solEl.style.display = 'block';
+          solEl.innerText = cardData.solution;
+        } else {
+          solEl.style.display = 'none';
+        }
+
+        // Show Slide-up Explanation Overlay
+        this.explainOverlay.classList.add('active');
+      }
+
+      removeTopCardAndGoNext() {
+        // Shift deck array
+        this.deck.shift();
+
+        // If deck is getting thin, reload and shuffle
+        if (this.deck.length === 0) {
+          this.deck = [...quizDeck];
+          this.shuffleDeck();
+        }
+
+        // Redraw
+        this.renderDeck();
+      }
+    }
+
+    // Start Swiper
+    window.addEventListener('DOMContentLoaded', () => {
+      new SwiperDeck();
+    });
+  </script>
+</body>
+</html>

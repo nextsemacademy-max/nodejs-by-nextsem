@@ -1,0 +1,18 @@
+{
+  "projects": {
+    "default": "nodejs-by-nextsem"
+  },
+  "targets": {
+    "nodejs-by-nextsem": {
+      "hosting": {
+        "prod": [
+          "nodejs-by-nextsem"
+        ],
+        "staging": [
+          "nodejs-by-nextsem-staging"
+        ]
+      }
+    }
+  },
+  "etags": {}
+}
