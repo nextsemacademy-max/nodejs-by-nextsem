@@ -4,7 +4,8 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>Interactive Notebook - NextSem Staging</title>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;1,300;1,400;1,500;1,600;1,700;1,800&family=Geist+Mono:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css?v=39">
   
   <style>
     :root {
@@ -17,8 +18,8 @@
       --text-muted: #9ca3af;
       --border: #1f2937;
       --header-bg: #111827;
-      --font-sans: 'Inter', sans-serif;
-      --font-mono: 'JetBrains Mono', monospace;
+      --font-sans: 'Plus Jakarta Sans', 'Inter', sans-serif;
+      --font-mono: 'Geist Mono', 'JetBrains Mono', monospace;
     }
 
     * {
@@ -544,24 +545,26 @@
       z-index: 100;
     }
     /* --- Mobile Fixed Bottom Nav --- */
-    .mobile-bottom-nav {
+    .notebook-bottom-nav {
       display: none;
     }
 
     @media (max-width: 768px) {
-      .mobile-bottom-nav {
+      body {
+        padding-bottom: 130px !important;
+      }
+      .notebook-bottom-nav {
         display: flex;
         flex-direction: column;
         position: fixed;
-        bottom: 0;
+        bottom: 60px;
         left: 0;
         right: 0;
-        z-index: 9999;
+        z-index: 1050;
         background: rgba(15, 23, 42, 0.97);
         backdrop-filter: blur(12px);
         border-top: 1px solid rgba(255,255,255,0.08);
         padding: 10px 14px;
-        padding-bottom: calc(10px + env(safe-area-inset-bottom));
         gap: 8px;
         box-shadow: 0 -8px 32px rgba(0,0,0,0.5);
       }
@@ -772,7 +775,7 @@
   </header>
 
   <!-- Fixed Bottom Nav (mobile): Lesson selector + navigation -->
-  <nav class="mobile-bottom-nav" aria-label="Mobile navigation">
+  <nav class="notebook-bottom-nav" aria-label="Mobile navigation">
     <!-- Top row: Lesson selector + Next lesson button -->
     <div class="mnav-top-row">
       <!-- Custom dark dropdown -->
@@ -797,17 +800,6 @@
         Next
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" width="13" height="13"><polyline points="9 18 15 12 9 6"></polyline></svg>
       </button>
-    </div>
-    <!-- Bottom row: Home + Exit -->
-    <div class="mnav-bottom-row">
-      <a href="index.html" class="mnav-home">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" width="16" height="16"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
-        Home
-      </a>
-      <a href="lessons.html" class="mnav-exit">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" width="16" height="16"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
-        Exit
-      </a>
     </div>
   </nav>
 
@@ -1342,5 +1334,13 @@
     initTutorBubbleFade();
     loadDynamicLessons();
   </script>
+  <!-- Firebase SDKs & Custom config -->
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-analytics-compat.js"></script>
+  <script src="firebase.js?v=39"></script>
+  <!-- Mobile Navigation Helper -->
+  <script src="mobile-nav.js?v=39"></script>
 </body>
 </html>
