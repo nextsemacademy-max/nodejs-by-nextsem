@@ -1153,6 +1153,112 @@ trackFilters.forEach(btn => {
     terminalTimers[pos] = setTimeout(printNext, 300);
   }
 
+  function executeDetailSimulatedCode(btn, lessonId) {
+    const term = document.getElementById('detail-terminal');
+    if (!term) return;
+
+    const timerKey = 'detail';
+
+    if (terminalTimers[timerKey]) {
+      clearTimeout(terminalTimers[timerKey]);
+      terminalTimers[timerKey] = null;
+    }
+
+    if (term.classList.contains('active')) {
+      term.classList.remove('active');
+      term.innerHTML = '';
+      btn.innerHTML = `<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="margin-bottom:-1px;"><polygon points="5 3 19 12 5 21 5 3"/></svg><span>Run Application</span>`;
+      return;
+    }
+
+    term.classList.add('active');
+    btn.innerHTML = `<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="margin-bottom:-1px;"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/></svg><span>Stop</span>`;
+
+    const textarea = document.getElementById('detail-code-textarea');
+    const code = textarea ? textarea.value.trim() : '';
+
+    term.innerHTML = '';
+    const initialLine = document.createElement('div');
+    initialLine.style.marginBottom = '4px';
+    initialLine.style.color = '#ffffff';
+    initialLine.style.fontWeight = 'bold';
+    initialLine.textContent = `$ node app.js`;
+    term.appendChild(initialLine);
+
+    if (!code) {
+      const emptyLine = document.createElement('div');
+      emptyLine.style.color = '#f87171';
+      emptyLine.textContent = `✗ Error: Code is empty`;
+      term.appendChild(emptyLine);
+      return;
+    }
+
+    const logs = simulateRun(code);
+    const lines = logs.map(l => {
+      return {
+        type: l.type,
+        text: (l.type === 'error' ? '✗ ' : l.type === 'warn' ? '⚠ ' : '› ') + l.text
+      };
+    });
+
+    const hasError = logs.some(l => l.type === 'error');
+    lines.push({
+      type: hasError ? 'error' : 'success',
+      text: hasError ? '✗ Execution failed.' : '✔ Execution finished successfully!'
+    });
+
+    let currentLine = 0;
+
+    function printNext() {
+      if (currentLine >= lines.length || !term.classList.contains('active')) {
+        terminalTimers[timerKey] = null;
+        return;
+      }
+      
+      const item = lines[currentLine];
+      const lineDiv = document.createElement('div');
+      lineDiv.style.marginBottom = '4px';
+      lineDiv.textContent = item.text;
+
+      if (item.type === 'error') {
+        lineDiv.style.color = '#f87171';
+      } else if (item.type === 'warn') {
+        lineDiv.style.color = '#fbbf24';
+      } else if (item.type === 'success') {
+        lineDiv.style.color = '#34d399';
+        
+        // Completion Action: Mark lesson complete upon success!
+        if (lessonId && !completedIds.includes(lessonId)) {
+          markDone(lessonId);
+          if (typeof triggerConfetti === 'function') {
+            triggerConfetti();
+          }
+          // Sync with Firebase
+          const activeIndex = lessons.findIndex(l => l.id === lessonId);
+          if (typeof firebase !== 'undefined' && firebase.auth().currentUser && typeof window.markModuleDone === 'function' && activeIndex !== -1) {
+            window.markModuleDone(activeIndex);
+          }
+        }
+      } else {
+        if (item.text.includes('[network]') || item.text.includes('[async]')) {
+          lineDiv.style.color = '#60a5fa';
+        }
+      }
+
+      term.appendChild(lineDiv);
+      currentLine++;
+
+      const mainCol = document.getElementById('lesson-detail-main-col');
+      if (mainCol) {
+        mainCol.scrollTop = mainCol.scrollHeight;
+      }
+
+      terminalTimers[timerKey] = setTimeout(printNext, 200);
+    }
+
+    terminalTimers[timerKey] = setTimeout(printNext, 300);
+  }
+
   function updateProgressBanner() {
     const completedCount = completedIds.length;
     const totalCount = lessons.length;
@@ -1256,7 +1362,14 @@ trackFilters.forEach(btn => {
           <span>${lesson.filename}</span>
           <button class="bcopy" id="bcopy-btn">Copy</button>
         </div>
-        <pre><code>${lesson.code}</code></pre>
+        <textarea class="sc-code-textarea" id="detail-code-textarea" style="background: #0d1117; color: #e6edf3; border: none; padding: 12px; font-family: var(--font-mono); font-size: 0.8rem; line-height: 1.5; resize: none; width: 100%; outline: none; box-sizing: border-box; display: block;" spellcheck="false">${lesson.code.replace(/<[^>]+>/g, '')}</textarea>
+        <div style="padding: 10px; border-top: 1px solid rgba(255,255,255,0.05); display: flex; gap: 8px;">
+          <button class="run-btn" id="detail-run-btn" style="background: linear-gradient(135deg, var(--node-green), var(--node-green-light)); color: white; border: none; padding: 8px 14px; border-radius: 6px; font-weight: 700; cursor: pointer; display: flex; align-items: center; gap: 6px; font-size: 0.78rem;">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="margin-bottom:-1px;"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+            <span>Run Application</span>
+          </button>
+        </div>
+        <div class="terminal-box" id="detail-terminal" style="margin: 0 10px 10px; display: none;"></div>
       </div>
       ${lesson.conceptImage ? `
       <div class="lcs-concept-diagram" style="border-top: 1px solid var(--border);">
@@ -1284,6 +1397,20 @@ trackFilters.forEach(btn => {
           copyBtn.textContent = '✓';
           setTimeout(() => copyBtn.textContent = 'Copy', 2000);
         }).catch(() => {});
+      });
+    }
+
+    // Auto-size textarea and bind code runner event listeners
+    const detailTextarea = document.getElementById('detail-code-textarea');
+    if (detailTextarea) {
+      const lineCount = detailTextarea.value.split('\n').length;
+      detailTextarea.style.height = `${Math.max(80, Math.min(260, lineCount * 18 + 18))}px`;
+    }
+
+    const detailRunBtn = document.getElementById('detail-run-btn');
+    if (detailRunBtn && detailTextarea) {
+      detailRunBtn.addEventListener('click', () => {
+        executeDetailSimulatedCode(detailRunBtn, lesson.id);
       });
     }
 
