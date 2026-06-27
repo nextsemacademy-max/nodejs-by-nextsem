@@ -874,7 +874,7 @@ trackFilters.forEach(btn => {
     // Code preview snippet
     const rawSnippet = lessonCodeSnippets[lesson.id] || '';
     const snippetLines = rawSnippet.split('\n').length;
-    const textareaHeight = Math.max(80, Math.min(220, snippetLines * 18 + 18));
+    const textareaHeight = Math.max(80, snippetLines * 18 + 24);
 
     return `
       <div class="card">
@@ -1401,7 +1401,7 @@ trackFilters.forEach(btn => {
     const detailTextarea = document.getElementById('detail-code-textarea');
     if (detailTextarea) {
       const lineCount = detailTextarea.value.split('\n').length;
-      detailTextarea.style.height = `${Math.max(80, Math.min(260, lineCount * 18 + 18))}px`;
+      detailTextarea.style.height = `${Math.max(80, lineCount * 18 + 24)}px`;
     }
 
     const detailRunBtn = document.getElementById('detail-run-btn');
