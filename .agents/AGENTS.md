@@ -1,8 +1,8 @@
 # NextSem Developer Rules
 
 ## 1. Word Wrapping & Horizontal Scrolling
-- **Requirement:** Ensure all code blocks (`pre`, `code`), paragraph blocks, article templates, and sandbox code segments use auto-wrapping.
-- **Implementation:** Code blocks must use `white-space: pre-wrap;`, `word-wrap: break-word;`, `word-break: break-word;`, and `overflow-x: hidden;` globally on all screen sizes to prevent any horizontal scrollbars and auto-adjust text dynamically.
+- **Requirement:** Ensure all code blocks (`pre`, `code`), paragraph blocks, article templates, and sandbox code segments use auto-wrapping. **NEVER add horizontal scrolls on any page, wrapper, or component. If any horizontal scrolls/scrollbar properties are discovered or introduced, immediately remove them and auto-update the application.**
+- **Implementation:** Code blocks and pages must use `white-space: pre-wrap;`, `word-wrap: break-word;`, `word-break: break-word;`, and `overflow-x: hidden !important;` globally on all screen sizes to prevent any horizontal scrollbars and auto-adjust text dynamically.
 
 ## 2. Google AdSense Script Integration
 - **Requirement:** Every HTML page (existing, modified, or newly created in the future) must include the Google AdSense and AMP auto ads script tags in the `<head>` and the `<amp-auto-ads>` tag in the `<body>`.
