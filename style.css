@@ -4081,4 +4081,10 @@ body.light-mode .mini-sandbox .mini-console {
   }
 }
 
+.hero-feature-card:hover {
+  background: rgba(104, 160, 99, 0.08) !important;
+  border-color: rgba(104, 160, 99, 0.4) !important;
+  transform: translateY(-2px);
+}
+
 
