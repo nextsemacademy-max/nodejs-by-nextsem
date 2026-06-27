@@ -629,6 +629,12 @@
             </div>
           </div>
 
+          <!-- Achievements Badges Section -->
+          <div class="sidebar-badges-sec" style="margin: 0.8rem 0 1.2rem; border-top: 1px dashed rgba(255,255,255,0.06); padding-top: 0.8rem;">
+            <div style="font-size: 0.72rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase; margin-bottom: 0.5rem; letter-spacing: 0.05em;">Unlocked Badges</div>
+            <div id="sidebar-badges-container" style="display: flex; gap: 8px; flex-wrap: wrap;"></div>
+          </div>
+
           <div class="sidebar-menu-items">
             <a href="index.html" class="sidebar-menu-item">🏠 Home / Curriculum</a>
             <a href="lessons.html?v=35" class="sidebar-menu-item">📚 Node.js Lessons</a>
@@ -886,6 +892,7 @@
         const progressFillEl = document.getElementById('sidebar-progress-fill');
         if (progressTextEl) progressTextEl.textContent = `${completedCount} / 20 modules`;
         if (progressFillEl) progressFillEl.style.width = `${pct}%`;
+        syncBadgesContent();
       } else {
         if (loggedOutDiv) loggedOutDiv.style.display = 'flex';
         if (loggedInDiv) loggedInDiv.style.display = 'none';
@@ -995,8 +1002,14 @@
               <div class="overlay-pb-fill" style="width:${pctMenu}%"></div>
             </div>
           </div>
+          <!-- Achievements Badges Section -->
+          <div class="overlay-badges-sec" style="margin-top: 0.8rem; border-top: 1px dashed rgba(255,255,255,0.06); padding-top: 0.8rem; text-align: left; width: 100%;">
+            <div style="font-size: 0.7rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase; margin-bottom: 0.4rem; letter-spacing: 0.05em;">Unlocked Badges</div>
+            <div id="mobile-badges-container" style="display: flex; gap: 6px; flex-wrap: wrap;"></div>
+          </div>
           <button class="btn-overlay-signout" id="mobile-signout-btn">Sign Out</button>
         `;
+        syncBadgesContent();
 
         const mobileSignoutBtn = document.getElementById('mobile-signout-btn');
         if (mobileSignoutBtn) {
@@ -1267,4 +1280,34 @@
       }
     }
   }
+
+  function syncBadgesContent() {
+    const badges = JSON.parse(localStorage.getItem('np_badges') || '[]');
+    const badgeData = {
+      'core': { emoji: '🌱', title: 'Core Master', color: '#10b981', bg: 'rgba(16,185,129,0.1)' },
+      'web': { emoji: '🚂', title: 'Express Guru', color: '#3b82f6', bg: 'rgba(59,130,246,0.1)' },
+      'db-auth': { emoji: '🗄️', title: 'DB & Auth Shield', color: '#a855f7', bg: 'rgba(168,85,247,0.1)' },
+      'devops-test': { emoji: '🧪', title: 'Test Architect', color: '#fb923c', bg: 'rgba(251,146,60,0.1)' }
+    };
+
+    const getBadgeHtml = (trackKey) => {
+      const bd = badgeData[trackKey];
+      const unlocked = badges.includes(trackKey);
+      return `
+        <div style="display: inline-flex; align-items: center; gap: 4px; padding: 4px 8px; border-radius: 20px; font-size: 0.7rem; font-weight: 700; border: 1px solid ${unlocked ? bd.color : 'rgba(255,255,255,0.06)'}; background: ${unlocked ? bd.bg : 'rgba(255,255,255,0.02)'}; color: ${unlocked ? '#fff' : 'rgba(255,255,255,0.2)'}; opacity: ${unlocked ? 1 : 0.4};" title="${unlocked ? bd.title + ' Unlocked!' : bd.title + ' Locked'}">
+          <span>${bd.emoji}</span>
+          <span>${bd.title}</span>
+        </div>
+      `;
+    };
+
+    const html = Object.keys(badgeData).map(getBadgeHtml).join('');
+
+    const sContainer = document.getElementById('sidebar-badges-container');
+    if (sContainer) sContainer.innerHTML = html;
+
+    const mContainer = document.getElementById('mobile-badges-container');
+    if (mContainer) mContainer.innerHTML = html;
+  }
+  window.syncBadgesContent = syncBadgesContent;
 })();

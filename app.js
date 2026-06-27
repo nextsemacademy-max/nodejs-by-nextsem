@@ -317,11 +317,442 @@ trackFilters.forEach(btn => {
     localStorage.setItem('np_completed', JSON.stringify(completedIds));
   }
 
+  function saveCompleted() {
+    localStorage.setItem('np_completed', JSON.stringify(completedIds));
+  }
+
   function markDone(id) {
     if (!completedIds.includes(id)) {
       completedIds.push(id);
       saveCompleted();
+
+      // Check track completion and trigger quizzes
+      const meta = lessonMeta[id] || {};
+      if (meta.track) {
+        checkTrackCompletion(meta.track);
+      }
     }
+  }
+
+  /* ─── Graduation Mini-Quizzes Gamification ─── */
+  const trackQuizzes = {
+    'core': [
+      {
+        question: "Is Node.js single-threaded or multi-threaded?",
+        options: [
+          "Strictly single-threaded everywhere",
+          "Single-threaded JS execution with multi-threaded C++ background APIs via Libuv",
+          "Multi-threaded JS execution",
+          "Runs on separate process threads for each function"
+        ],
+        answer: 1,
+        explanation: "The main JavaScript thread runs on a single event loop, but Libuv manages a thread pool for heavy background I/O operations."
+      },
+      {
+        question: "Which of these runs in the microtask queue?",
+        options: [
+          "setTimeout callbacks",
+          "setImmediate callbacks",
+          "process.nextTick and Promise resolve callbacks",
+          "setInterval callbacks"
+        ],
+        answer: 2,
+        explanation: "process.nextTick() and Promises are microtasks and are processed immediately after the current operation finishes."
+      },
+      {
+        question: "Why are synchronous file operations (like readFileSync) dangerous in web servers?",
+        options: [
+          "They consume too much battery",
+          "They block the single main execution thread, stopping all other incoming requests",
+          "They automatically crash the database connection",
+          "They can only write to root directories"
+        ],
+        answer: 1,
+        explanation: "Synchronous calls block the single thread, preventing the server from handling other concurrent users."
+      }
+    ],
+    'web': [
+      {
+        question: "What is the purpose of the next() function in Express middleware?",
+        options: [
+          "To terminate the request",
+          "To redirect the client to another URL",
+          "To pass control to the next middleware function in the stack",
+          "To fetch the next database document"
+        ],
+        answer: 2,
+        explanation: "Calling next() tells Express to move to the next handler/middleware in the execution pipeline."
+      },
+      {
+        question: "CORS is a security check enforced by which component?",
+        options: [
+          "The backend server database",
+          "The web browser (client-side)",
+          "The DNS resolver",
+          "The operating system kernel"
+        ],
+        answer: 1,
+        explanation: "CORS is a browser-enforced security check to prevent unauthorized cross-origin requests."
+      },
+      {
+        question: "Which package protects Express apps by setting secure HTTP headers?",
+        options: [
+          "cors",
+          "morgan",
+          "helmet",
+          "dotenv"
+        ],
+        answer: 2,
+        explanation: "Helmet sets headers (like X-XSS-Protection, Content-Security-Policy) to shield apps from web exploits."
+      }
+    ],
+    'db-auth': [
+      {
+        question: "What does JWT stand for and what is its main use case?",
+        options: [
+          "JSON Web Token; stateless authentication",
+          "Java Web Transport; data syncing",
+          "JavaScript Web Token; stylesheet styling",
+          "Joined Web Table; database joining"
+        ],
+        answer: 0,
+        explanation: "JSON Web Tokens are signed packages used to authenticate users statelessly."
+      },
+      {
+        question: "What is the benefit of storing session cache in Redis?",
+        options: [
+          "Encrypts passwords automatically",
+          "Extremely fast in-memory key-value data storage",
+          "Acts as a primary database for user profiles",
+          "Bypasses CORS checks"
+        ],
+        answer: 1,
+        explanation: "Redis is an in-memory database, which makes it ideal for fast, temporary data caches."
+      },
+      {
+        question: "What does bcrypt do in authentication?",
+        options: [
+          "Creates JWT signatures",
+          "Encrypts MongoDB connection strings",
+          "Hashes and salts passwords securely before saving to a database",
+          "Verifies email formats"
+        ],
+        answer: 2,
+        explanation: "bcrypt securely hashes passwords using salt and multiple cost rounds to protect against brute-force attacks."
+      }
+    ],
+    'devops-test': [
+      {
+        question: "Which module allows you to run multiple child instances of your Node app sharing the same port?",
+        options: [
+          "child_process",
+          "os",
+          "cluster",
+          "worker_threads"
+        ],
+        answer: 2,
+        explanation: "The cluster module scales apps across multi-core systems by spawning worker processes sharing a port."
+      },
+      {
+        question: "What type of testing is Jest primarily used for in Node.js?",
+        options: [
+          "Simulating front-end CSS rendering",
+          "Unit testing and integration testing of functions and APIs",
+          "Database performance benchmarking",
+          "Network router load testing"
+        ],
+        answer: 1,
+        explanation: "Jest is a JavaScript testing framework optimized for unit, integration, and snapshot tests."
+      },
+      {
+        question: "What is the difference between Worker Threads and Clustering?",
+        options: [
+          "Clustering runs separate processes; Worker Threads run multiple threads in the same process",
+          "Clustering runs in browser; Worker Threads run on the OS",
+          "Worker threads block the main thread; Clustering does not",
+          "Clustering is only for SQL databases"
+        ],
+        answer: 0,
+        explanation: "Clustering scales across multiple CPU processes (separate memory), whereas Worker Threads share the same process memory (useful for CPU-bound computations)."
+      }
+    ]
+  };
+
+  function checkTrackCompletion(trackName) {
+    // 1. Get all lessons in this track
+    const trackLessons = lessons.map((l, i) => {
+      const meta = lessonMeta[l.id] || {};
+      return { id: l.id, track: meta.track || 'core' };
+    }).filter(item => item.track === trackName);
+
+    // 2. Check if all of them are inside completedIds
+    const completedArr = JSON.parse(localStorage.getItem('np_completed') || '[]');
+    const allDone = trackLessons.every(l => completedArr.includes(l.id));
+
+    if (allDone) {
+      // Check if badge is already unlocked
+      const badges = JSON.parse(localStorage.getItem('np_badges') || '[]');
+      if (!badges.includes(trackName)) {
+        setTimeout(() => {
+          launchTrackQuiz(trackName);
+        }, 1200); // short delay to let confetti animations finish first
+      }
+    }
+  }
+
+  function launchTrackQuiz(trackName) {
+    const qList = trackQuizzes[trackName];
+    if (!qList) return;
+
+    let qIdx = 0;
+    let quizScore = 0;
+    let selectedOpt = null;
+    let answered = false;
+
+    const backdrop = document.createElement('div');
+    backdrop.id = 'track-quiz-backdrop';
+    backdrop.style.cssText = `
+      position: fixed;
+      inset: 0;
+      background: rgba(10,14,19,0.94);
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+      z-index: 100000;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 1.5rem;
+      font-family: system-ui, -apple-system, sans-serif;
+    `;
+
+    const card = document.createElement('div');
+    card.style.cssText = `
+      background: #151d30;
+      border: 1px solid rgba(255,255,255,0.06);
+      border-radius: 12px;
+      width: 100%;
+      max-width: 480px;
+      padding: 2rem;
+      color: #e6edf3;
+      display: flex;
+      flex-direction: column;
+      gap: 1.2rem;
+      box-shadow: 0 20px 40px rgba(0,0,0,0.5);
+    `;
+
+    backdrop.appendChild(card);
+    document.body.appendChild(backdrop);
+
+    function renderQuestion() {
+      card.innerHTML = '';
+      answered = false;
+      selectedOpt = null;
+
+      const qItem = qList[qIdx];
+      const trackTitle = trackName === 'core' ? '🌱 Node.js Core' : trackName === 'web' ? '🚂 Express Web' : trackName === 'db-auth' ? '🗄️ DB & Auth' : '🧪 DevOps & Testing';
+
+      const header = document.createElement('div');
+      header.style.display = 'flex';
+      header.style.justifyContent = 'space-between';
+      header.style.alignItems = 'center';
+      header.style.borderBottom = '1px solid rgba(255,255,255,0.06)';
+      header.style.paddingBottom = '0.5rem';
+      header.innerHTML = `
+        <span style="font-weight: 700; color: var(--node-green-light); font-size: 0.82rem; text-transform: uppercase;">🎓 ${trackTitle} Quiz</span>
+        <span style="font-size: 0.72rem; color: #a8b5c2;">Question ${qIdx + 1} of ${qList.length}</span>
+      `;
+      card.appendChild(header);
+
+      const bodyText = document.createElement('div');
+      bodyText.style.fontSize = '1rem';
+      bodyText.style.fontWeight = '600';
+      bodyText.style.lineHeight = '1.45';
+      bodyText.textContent = qItem.question;
+      card.appendChild(bodyText);
+
+      const optionsDiv = document.createElement('div');
+      optionsDiv.style.display = 'flex';
+      optionsDiv.style.flexDirection = 'column';
+      optionsDiv.style.gap = '0.6rem';
+      
+      qItem.options.forEach((opt, oIdx) => {
+        const btn = document.createElement('button');
+        btn.style.cssText = `
+          width: 100%;
+          text-align: left;
+          background: rgba(255,255,255,0.03);
+          border: 1px solid rgba(255,255,255,0.06);
+          border-radius: 8px;
+          padding: 0.75rem 1rem;
+          font-size: 0.85rem;
+          color: #e6edf3;
+          cursor: pointer;
+          transition: all 0.2s ease;
+          display: flex;
+          align-items: center;
+          gap: 0.5rem;
+        `;
+        btn.innerHTML = `<span style="opacity: 0.4; font-weight: 700;">${String.fromCharCode(65 + oIdx)}</span> ${opt}`;
+
+        btn.addEventListener('mouseenter', () => {
+          if (!answered) {
+            btn.style.background = 'rgba(255,255,255,0.08)';
+            btn.style.borderColor = 'rgba(255,255,255,0.15)';
+          }
+        });
+
+        btn.addEventListener('mouseleave', () => {
+          if (!answered) {
+            btn.style.background = 'rgba(255,255,255,0.03)';
+            btn.style.borderColor = 'rgba(255,255,255,0.06)';
+          }
+        });
+
+        btn.addEventListener('click', () => {
+          if (answered) return;
+          answered = true;
+          selectedOpt = oIdx;
+
+          const children = optionsDiv.children;
+          if (selectedOpt === qItem.answer) {
+            quizScore++;
+            btn.style.background = 'rgba(16, 185, 129, 0.15)';
+            btn.style.borderColor = '#10b981';
+          } else {
+            btn.style.background = 'rgba(239, 68, 68, 0.15)';
+            btn.style.borderColor = '#ef4444';
+            
+            const correctBtn = children[qItem.answer];
+            if (correctBtn) {
+              correctBtn.style.background = 'rgba(16, 185, 129, 0.1)';
+              correctBtn.style.borderColor = '#10b981';
+            }
+          }
+
+          const expPanel = document.createElement('div');
+          expPanel.style.cssText = `
+            background: rgba(255,255,255,0.02);
+            border-left: 3px solid ${selectedOpt === qItem.answer ? '#10b981' : '#ef4444'};
+            border-radius: 4px;
+            padding: 0.6rem 0.8rem;
+            font-size: 0.78rem;
+            line-height: 1.45;
+            color: #b8c4ce;
+            margin-top: 0.5rem;
+          `;
+          expPanel.innerHTML = `<strong>${selectedOpt === qItem.answer ? '🎉 Correct!' : '❌ Incorrect'}</strong><br>${qItem.explanation}`;
+          card.insertBefore(expPanel, nextBtn);
+          nextBtn.disabled = false;
+        });
+
+        optionsDiv.appendChild(btn);
+      });
+
+      card.appendChild(optionsDiv);
+
+      const nextBtn = document.createElement('button');
+      nextBtn.disabled = true;
+      nextBtn.style.cssText = `
+        margin-top: 0.5rem;
+        background: var(--node-green);
+        border: 1px solid var(--node-green);
+        color: white;
+        border-radius: 8px;
+        padding: 0.75rem;
+        font-size: 0.88rem;
+        font-weight: 700;
+        cursor: pointer;
+        transition: opacity 0.2s ease;
+        opacity: 0.5;
+      `;
+      nextBtn.textContent = qIdx === qList.length - 1 ? "Finish Quiz" : "Next Question";
+      
+      nextBtn.addEventListener('click', () => {
+        if (qIdx === qList.length - 1) {
+          showResults();
+        } else {
+          qIdx++;
+          renderQuestion();
+        }
+      });
+      
+      card.appendChild(nextBtn);
+
+      const observer = new MutationObserver(() => {
+        nextBtn.style.opacity = nextBtn.disabled ? '0.5' : '1';
+        nextBtn.style.cursor = nextBtn.disabled ? 'not-allowed' : 'pointer';
+      });
+      observer.observe(nextBtn, { attributes: true, attributeFilter: ['disabled'] });
+      nextBtn.style.opacity = '0.5';
+    }
+
+    function showResults() {
+      card.innerHTML = '';
+      
+      const title = document.createElement('div');
+      title.style.fontSize = '1.3rem';
+      title.style.fontWeight = '700';
+      title.style.textAlign = 'center';
+      title.style.marginTop = '0.5rem';
+
+      const detailsText = document.createElement('div');
+      detailsText.style.textAlign = 'center';
+      detailsText.style.fontSize = '0.88rem';
+      detailsText.style.color = '#a8b5c2';
+      detailsText.style.lineHeight = '1.5';
+
+      const actionBtn = document.createElement('button');
+      actionBtn.style.cssText = `
+        background: var(--node-green);
+        border: 1px solid var(--node-green);
+        color: white;
+        border-radius: 8px;
+        padding: 0.75rem;
+        font-size: 0.88rem;
+        font-weight: 700;
+        cursor: pointer;
+        margin-top: 1rem;
+      `;
+
+      if (quizScore === qList.length) {
+        title.innerHTML = `🎉 Congratulations! Perfect Score!`;
+        detailsText.innerHTML = `You answered all 3 questions correctly and graduated from the track!<br><strong style="color:var(--node-green-light); font-size:1.1rem; display:block; margin-top:8px;">🏆 Unlocked Graduation Badge!</strong>`;
+        actionBtn.textContent = "Claim Badge & Close";
+
+        const badges = JSON.parse(localStorage.getItem('np_badges') || '[]');
+        if (!badges.includes(trackName)) {
+          badges.push(trackName);
+          localStorage.setItem('np_badges', JSON.stringify(badges));
+        }
+
+        if (typeof triggerConfetti === 'function') {
+          triggerConfetti();
+        }
+
+        actionBtn.addEventListener('click', () => {
+          backdrop.parentNode.removeChild(backdrop);
+          if (typeof window.syncBadgesContent === 'function') {
+            window.syncBadgesContent();
+          }
+        });
+      } else {
+        title.innerHTML = `😢 Quiz Failed (${quizScore} / ${qList.length})`;
+        detailsText.innerHTML = `You answered ${quizScore} out of ${qList.length} questions correctly. You need a perfect score (3/3) to graduate and unlock the achievement badge.`;
+        actionBtn.textContent = "Try Again";
+
+        actionBtn.addEventListener('click', () => {
+          qIdx = 0;
+          quizScore = 0;
+          renderQuestion();
+        });
+      }
+
+      card.appendChild(title);
+      card.appendChild(detailsText);
+      card.appendChild(actionBtn);
+    }
+
+    renderQuestion();
   }
 
   /* ─── Swipe Feed Data ─── */
