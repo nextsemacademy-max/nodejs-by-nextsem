@@ -904,10 +904,10 @@ trackFilters.forEach(btn => {
         </div>
 
         <div class="terminal-box" id="terminal-${pos}"></div>
-        
-        <div class="sc-dots-rail">${dotsHtml}</div>
-        <div class="sc-swipe-hint">↕ swipe up · down</div>
       </div>
+      
+      <div class="sc-dots-rail">${dotsHtml}</div>
+      <div class="sc-swipe-hint">↕ swipe up · down</div>
     `;
   }
 
