@@ -22,3 +22,6 @@
     <amp-auto-ads type="adsense" data-ad-client="ca-pub-4242865347895866"></amp-auto-ads>
     <!-- end of amp ads -->
     ```
+
+## 3. Automated Firebase Deployment
+- **Requirement:** Automatically run `firebase deploy` in the workspace directory after completing any code changes or file modifications so that the live website is always in sync with local updates.
